@@ -31,5 +31,11 @@ export const api = {
   patch: <T>(path: string, body?: unknown) => request<T>("PATCH", path, body),
   del: <T>(path: string) => request<T>("DELETE", path),
   // Binary endpoints (screenshots) bypass the JSON envelope.
-  raw: async (path: string): Promise<Blob> => (await fetch(path)).blob(),
+  raw: async (path: string): Promise<Blob> => {
+    const res = await fetch(path);
+    if (!res.ok) {
+      throw new ApiError(String(res.status), res.statusText || "request failed");
+    }
+    return res.blob();
+  },
 };

@@ -115,7 +115,7 @@ SUPPORT_REFRESH_CONFIRM = Point(640, 480)  # "OK" on the refresh dialog
 
 # --- Quest entry ----------------------------------------------------------
 
-QUEST_DETAIL_START = Point(640, 660)  # "出發 / Start" on the quest detail page
+QUEST_DETAIL_START = Point(1130, 640)  # "出發 / Start" on the quest detail page
 QUEST_AUTO_BURN_CONFIRM = Point(830, 520)  # "決定" on auto-burn target dialog
 
 # --- AP recovery ----------------------------------------------------------

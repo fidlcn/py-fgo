@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { useAsync, fetchQuestProfiles } from "../api/hooks";
 import { api } from "../api/client";
 import { Card, Empty, Field } from "../components/ui";
+import { usePersistentState } from "../hooks/usePersistentState";
 
 const EMPTY = { name: "", category: "daily", entry_mode: "current_quest", server_region: "cn" };
 const CATEGORY_LABELS: Record<string, string> = {
@@ -23,7 +23,7 @@ const ENTRY_LABELS: Record<string, string> = {
 
 export function QuestProfiles() {
   const list = useAsync(fetchQuestProfiles, []);
-  const [form, setForm] = useState({ ...EMPTY });
+  const [form, setForm] = usePersistentState("py-fgo.quest-profiles.form", { ...EMPTY });
 
   async function add() {
     await api.post("/api/quest-profiles", form);

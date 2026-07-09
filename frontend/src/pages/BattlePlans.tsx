@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAsync, fetchBattlePlans } from "../api/hooks";
 import { api } from "../api/client";
 import { Card, Empty, Field } from "../components/ui";
+import { usePersistentState } from "../hooks/usePersistentState";
 import type { BattleAction, BattlePlan, BattleWave, CardPolicy } from "../types";
 
 const ACTION_TYPES = [
@@ -37,8 +38,8 @@ const DEFAULT_POLICY: CardPolicy = {
 
 export function BattlePlans() {
   const list = useAsync(fetchBattlePlans, []);
-  const [editing, setEditing] = useState<BattlePlan | null>(null);
-  const [dirty, setDirty] = useState(false);
+  const [editing, setEditing] = usePersistentState<BattlePlan | null>("py-fgo.battle-plans.editing", null);
+  const [dirty, setDirty] = usePersistentState("py-fgo.battle-plans.dirty", false);
   const [saving, setSaving] = useState(false);
 
   async function createPlan() {
@@ -79,6 +80,21 @@ export function BattlePlans() {
     }
   }
 
+  async function deletePlan(plan: BattlePlan) {
+    const ok = window.confirm(`确认删除战斗方案「${plan.name}」？`);
+    if (!ok) return;
+    try {
+      await api.del(`/api/battle-plans/${plan.id}`);
+      if (editing?.id === plan.id) {
+        setEditing(null);
+        setDirty(false);
+      }
+      list.reload();
+    } catch (e) {
+      alert((e as Error).message);
+    }
+  }
+
   return (
     <div>
       <h1 className="page-title">战斗方案</h1>
@@ -101,17 +117,21 @@ export function BattlePlans() {
           ) : (
             <div className="grid">
               {list.data?.map((p) => (
-                <button
-                  key={p.id}
-                  className="btn small secondary"
-                  style={{ justifyContent: "flex-start" }}
-                  onClick={() => {
-                    setEditing(p);
-                    setDirty(false);
-                  }}
-                >
-                  {p.name} {editing?.id === p.id && "•"}
-                </button>
+                <div key={p.id} className="row spread">
+                  <button
+                    className="btn small secondary"
+                    style={{ flex: 1, justifyContent: "flex-start" }}
+                    onClick={() => {
+                      setEditing(p);
+                      setDirty(false);
+                    }}
+                  >
+                    {p.name} {editing?.id === p.id && "•"}
+                  </button>
+                  <button className="btn small danger" onClick={() => deletePlan(p)}>
+                    删除
+                  </button>
+                </div>
               ))}
             </div>
           )}
@@ -127,9 +147,21 @@ export function BattlePlans() {
               />
             }
             actions={
-              <button className="btn small" disabled={!dirty || saving} onClick={save}>
-                {saving ? "保存中…" : "保存"}
-              </button>
+              <>
+                <button
+                  className="btn small secondary"
+                  disabled={!dirty}
+                  onClick={() => {
+                    setEditing(null);
+                    setDirty(false);
+                  }}
+                >
+                  放弃草稿
+                </button>
+                <button className="btn small" disabled={!dirty || saving} onClick={save}>
+                  {saving ? "保存中…" : "保存"}
+                </button>
+              </>
             }
           >
             <PlanEditor plan={editing} patch={patch} />
@@ -154,10 +186,21 @@ function PlanEditor({
   function addWave() {
     patch((p) => p.waves.push({ wave: p.waves.length + 1, turns: [] }));
   }
+  function deleteWave(index: number) {
+    patch((p) => {
+      p.waves.splice(index, 1);
+      p.waves.forEach((wave, i) => (wave.wave = i + 1));
+    });
+  }
   return (
     <div className="grid">
       {plan.waves.map((w, wi) => (
-        <WaveBlock key={wi} wave={w} patch={(mut) => patch((p) => mut(p.waves[wi]))} />
+        <WaveBlock
+          key={wi}
+          wave={w}
+          patch={(mut) => patch((p) => mut(p.waves[wi]))}
+          onDelete={() => deleteWave(wi)}
+        />
       ))}
       <button className="btn small secondary" onClick={addWave}>
         + 添加波次
@@ -169,15 +212,35 @@ function PlanEditor({
 function WaveBlock({
   wave,
   patch,
+  onDelete,
 }: {
   wave: BattleWave;
   patch: (mut: (w: BattleWave) => void) => void;
+  onDelete: () => void;
 }) {
+  function deleteTurn(index: number) {
+    patch((w) => {
+      w.turns.splice(index, 1);
+      w.turns.forEach((turn, i) => (turn.turn = i + 1));
+    });
+  }
   return (
-    <Card title={`第 ${wave.wave} 波`}>
+    <Card
+      title={`第 ${wave.wave} 波`}
+      actions={
+        <button className="btn small danger" onClick={onDelete}>
+          删除波次
+        </button>
+      }
+    >
       <div className="grid">
         {wave.turns.map((t, ti) => (
-          <TurnBlock key={ti} turn={t} patch={(mut) => patch((w) => mut(w.turns[ti]))} />
+          <TurnBlock
+            key={ti}
+            turn={t}
+            patch={(mut) => patch((w) => mut(w.turns[ti]))}
+            onDelete={() => deleteTurn(ti)}
+          />
         ))}
         <button
           className="btn small secondary"
@@ -197,9 +260,11 @@ function WaveBlock({
 function TurnBlock({
   turn,
   patch,
+  onDelete,
 }: {
   turn: { turn: number; actions: BattleAction[]; card_policy?: CardPolicy };
   patch: (mut: (t: typeof turn) => void) => void;
+  onDelete: () => void;
 }) {
   function addAction(type: string) {
     patch((t) => {
@@ -218,11 +283,21 @@ function TurnBlock({
     <div className="card" style={{ background: "var(--panel-2)" }}>
       <div className="spread" style={{ marginBottom: 10 }}>
         <strong>第 {turn.turn} 回合</strong>
-        <span className="muted">{turn.actions.length} 个动作</span>
+        <div className="row">
+          <span className="muted">{turn.actions.length} 个动作</span>
+          <button className="btn small danger" onClick={onDelete}>
+            删除回合
+          </button>
+        </div>
       </div>
       <div className="grid">
         {turn.actions.map((a, ai) => (
-          <ActionRow key={ai} action={a} patch={(mut) => patch((t) => mut(t.actions[ai]))} />
+          <ActionRow
+            key={ai}
+            action={a}
+            patch={(mut) => patch((t) => mut(t.actions[ai]))}
+            onDelete={() => patch((t) => t.actions.splice(ai, 1))}
+          />
         ))}
       </div>
       <div className="row" style={{ marginTop: 10 }}>
@@ -241,9 +316,11 @@ function TurnBlock({
 function ActionRow({
   action,
   patch,
+  onDelete,
 }: {
   action: BattleAction;
   patch: (mut: (a: BattleAction) => void) => void;
+  onDelete: () => void;
 }) {
   const num = (key: keyof BattleAction) => (
     <input
@@ -309,6 +386,9 @@ function ActionRow({
           />
         )}
       </div>
+      <button className="btn small danger" onClick={onDelete}>
+        删除
+      </button>
     </div>
   );
 }

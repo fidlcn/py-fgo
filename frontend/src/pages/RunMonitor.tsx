@@ -8,18 +8,29 @@ export function RunMonitor() {
   const [selected, setSelected] = useState<string>("");
   const [shot, setShot] = useState<string | null>(null);
   const [auto, setAuto] = useState(true);
+  const [shotError, setShotError] = useState<string | null>(null);
   const timer = useRef<number | null>(null);
+  const failures = useRef(0);
 
   useEffect(() => {
     if (!selected) return;
     const grab = async () => {
+      if (failures.current >= 3) {
+        setAuto(false);
+        return;
+      }
       try {
         const blob = await api.raw(`/api/instances/${selected}/screenshot`);
         setShot(URL.createObjectURL(blob));
-      } catch {
-        /* offline / error */
+        failures.current = 0;
+        setShotError(null);
+      } catch (e) {
+        failures.current += 1;
+        setShotError(e instanceof Error ? e.message : String(e));
       }
     };
+    failures.current = 0;
+    setShotError(null);
     grab();
     if (auto) {
       timer.current = window.setInterval(grab, 4000);
@@ -52,11 +63,26 @@ export function RunMonitor() {
           </label>
           <button
             className="btn small secondary"
-            onClick={async () => selected && setShot(URL.createObjectURL(await api.raw(`/api/instances/${selected}/screenshot`)))}
+            onClick={async () => {
+              if (!selected) return;
+              try {
+                failures.current = 0;
+                const blob = await api.raw(`/api/instances/${selected}/screenshot`);
+                setShot(URL.createObjectURL(blob));
+                setShotError(null);
+              } catch (e) {
+                setShotError(e instanceof Error ? e.message : String(e));
+              }
+            }}
           >
             立即截图
           </button>
         </div>
+        {shotError && (
+          <div className="badge err" style={{ marginTop: 10 }}>
+            截图失败：{shotError}。连续失败后已暂停自动刷新，请确认后端服务仍在运行。
+          </div>
+        )}
       </Card>
 
       {!current ? (

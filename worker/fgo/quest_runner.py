@@ -114,10 +114,7 @@ class QuestRunner:
         if state == FgoState.SUPPORT_SELECT:
             return
         if state != FgoState.QUEST_DETAIL:
-            try:
-                sm.wait_state(ctx, FgoState.QUEST_DETAIL, timeout=10.0)
-            except Exception:  # noqa: BLE001 - proceed optimistically
-                log.warning("not on QUEST_DETAIL; proceeding optimistically")
+            sm.wait_state(ctx, FgoState.QUEST_DETAIL, timeout=10.0)
         ctx.executor.tap_named("QUEST_DETAIL_START", C.QUEST_DETAIL_START)
         ctx.record_action("tap quest start (from detail)")
         try:
@@ -128,16 +125,25 @@ class QuestRunner:
             # conservative coordinate fallback only after support did not appear.
             ctx.executor.tap_named("QUEST_AUTO_BURN_CONFIRM", C.QUEST_AUTO_BURN_CONFIRM)
             ctx.record_action("confirm auto-burn target dialog")
-            sm.wait_state(ctx, FgoState.SUPPORT_SELECT, timeout=15.0)
+            try:
+                sm.wait_state(ctx, FgoState.SUPPORT_SELECT, timeout=5.0)
+                return
+            except StateDetectionError:
+                # If the tap closed an auto-burn settings dialog instead of a
+                # quest-entry confirmation, we are back on quest detail and
+                # must press the real Start button once more.
+                state, _ = sm.sense(ctx)
+                if state != FgoState.QUEST_DETAIL:
+                    sm.wait_state(ctx, FgoState.QUEST_DETAIL, timeout=5.0)
+                ctx.executor.tap_named("QUEST_DETAIL_START", C.QUEST_DETAIL_START)
+                ctx.record_action("tap quest start after auto-burn dialog")
+                sm.wait_state(ctx, FgoState.SUPPORT_SELECT, timeout=15.0)
 
     def _confirm_party(self) -> None:
         ctx = self.ctx
         state, _ = sm.sense(ctx)
         if state != FgoState.PARTY_CONFIRM:
-            try:
-                sm.wait_state(ctx, FgoState.PARTY_CONFIRM, timeout=10.0)
-            except Exception:  # noqa: BLE001
-                pass
+            sm.wait_state(ctx, FgoState.PARTY_CONFIRM, timeout=10.0)
         ctx.executor.tap_quest_start()
         ctx.record_action("tap quest start (party confirm)")
         sm.wait_state(ctx, FgoState.BATTLE_COMMAND, timeout=30.0)

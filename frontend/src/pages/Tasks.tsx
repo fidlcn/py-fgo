@@ -1,7 +1,18 @@
-import { useState } from "react";
 import { useAsync, fetchInstances, fetchQuestProfiles, fetchSupportProfiles, fetchBattlePlans, fetchTasks } from "../api/hooks";
 import { api } from "../api/client";
 import { Card, Empty, Field, StatusBadge } from "../components/ui";
+import { usePersistentState } from "../hooks/usePersistentState";
+
+const EMPTY_DRAFT = {
+  instanceId: "",
+  questId: "",
+  supportId: "",
+  planId: "",
+  count: 10,
+  stopOnFail: true,
+  maxFail: 3,
+  apEnabled: false,
+};
 
 export function Tasks() {
   const inst = useAsync(fetchInstances, []);
@@ -10,25 +21,23 @@ export function Tasks() {
   const bp = useAsync(fetchBattlePlans, []);
   const tasks = useAsync(fetchTasks, []);
 
-  const [instanceId, setInstanceId] = useState("");
-  const [questId, setQuestId] = useState("");
-  const [supportId, setSupportId] = useState("");
-  const [planId, setPlanId] = useState("");
-  const [count, setCount] = useState(10);
-  const [stopOnFail, setStopOnFail] = useState(true);
-  const [maxFail, setMaxFail] = useState(3);
-  const [apEnabled, setApEnabled] = useState(false);
+  const [draft, setDraft] = usePersistentState("py-fgo.tasks.create-draft", EMPTY_DRAFT);
 
-  const ready = instanceId && questId && supportId && planId;
+  const ready = draft.instanceId && draft.questId && draft.supportId && draft.planId;
 
   async function create() {
     await api.post("/api/tasks", {
-      instance_id: instanceId,
-      quest_profile_id: questId,
-      support_profile_id: supportId,
-      battle_plan_id: planId,
-      loop_config: { mode: "count", count, stop_on_failure: stopOnFail, max_failures: maxFail },
-      ap_recovery: { enabled: apEnabled, priority: ["bronze", "silver", "gold"], max_items: 3 },
+      instance_id: draft.instanceId,
+      quest_profile_id: draft.questId,
+      support_profile_id: draft.supportId,
+      battle_plan_id: draft.planId,
+      loop_config: {
+        mode: "count",
+        count: draft.count,
+        stop_on_failure: draft.stopOnFail,
+        max_failures: draft.maxFail,
+      },
+      ap_recovery: { enabled: draft.apEnabled, priority: ["bronze", "silver", "gold"], max_items: 3 },
     });
     tasks.reload();
   }
@@ -46,7 +55,7 @@ export function Tasks() {
       <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", marginBottom: 18 }}>
         <Card title="创建任务">
           <Field label="模拟器实例">
-            <select value={instanceId} onChange={(e) => setInstanceId(e.target.value)}>
+            <select value={draft.instanceId} onChange={(e) => setDraft({ ...draft, instanceId: e.target.value })}>
               <option value="">— 请选择 —</option>
               {inst.data?.map((i) => (
                 <option key={i.id} value={i.id}>
@@ -56,7 +65,7 @@ export function Tasks() {
             </select>
           </Field>
           <Field label="关卡配置">
-            <select value={questId} onChange={(e) => setQuestId(e.target.value)}>
+            <select value={draft.questId} onChange={(e) => setDraft({ ...draft, questId: e.target.value })}>
               <option value="">— 请选择 —</option>
               {qp.data?.map((q) => (
                 <option key={q.id} value={q.id}>
@@ -66,7 +75,7 @@ export function Tasks() {
             </select>
           </Field>
           <Field label="助战配置">
-            <select value={supportId} onChange={(e) => setSupportId(e.target.value)}>
+            <select value={draft.supportId} onChange={(e) => setDraft({ ...draft, supportId: e.target.value })}>
               <option value="">— 请选择 —</option>
               {sp.data?.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -76,7 +85,7 @@ export function Tasks() {
             </select>
           </Field>
           <Field label="战斗方案">
-            <select value={planId} onChange={(e) => setPlanId(e.target.value)}>
+            <select value={draft.planId} onChange={(e) => setDraft({ ...draft, planId: e.target.value })}>
               <option value="">— 请选择 —</option>
               {bp.data?.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -87,25 +96,48 @@ export function Tasks() {
           </Field>
           <div className="row">
             <Field label="循环次数">
-              <input type="number" value={count} onChange={(e) => setCount(+e.target.value)} style={{ width: 100 }} />
+              <input
+                type="number"
+                value={draft.count}
+                onChange={(e) => setDraft({ ...draft, count: +e.target.value })}
+                style={{ width: 100 }}
+              />
             </Field>
             <Field label="最大失败次数">
-              <input type="number" value={maxFail} onChange={(e) => setMaxFail(+e.target.value)} style={{ width: 100 }} />
+              <input
+                type="number"
+                value={draft.maxFail}
+                onChange={(e) => setDraft({ ...draft, maxFail: +e.target.value })}
+                style={{ width: 100 }}
+              />
             </Field>
           </div>
           <div className="row">
             <label className="row">
-              <input type="checkbox" checked={stopOnFail} onChange={(e) => setStopOnFail(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={draft.stopOnFail}
+                onChange={(e) => setDraft({ ...draft, stopOnFail: e.target.checked })}
+              />
               失败后停止
             </label>
             <label className="row">
-              <input type="checkbox" checked={apEnabled} onChange={(e) => setApEnabled(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={draft.apEnabled}
+                onChange={(e) => setDraft({ ...draft, apEnabled: e.target.checked })}
+              />
               自动恢复 AP
             </label>
           </div>
-          <button className="btn" disabled={!ready} onClick={create}>
-            创建任务
-          </button>
+          <div className="row">
+            <button className="btn" disabled={!ready} onClick={create}>
+              创建任务
+            </button>
+            <button className="btn secondary" onClick={() => setDraft({ ...EMPTY_DRAFT })}>
+              清空表单
+            </button>
+          </div>
         </Card>
       </div>
 

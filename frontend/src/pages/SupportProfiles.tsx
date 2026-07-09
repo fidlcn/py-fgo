@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { useAsync, fetchSupportProfiles } from "../api/hooks";
 import { api } from "../api/client";
 import { Card, Empty, Field } from "../components/ui";
+import { usePersistentState } from "../hooks/usePersistentState";
 
 const CLASSES = ["all", "saber", "archer", "lancer", "rider", "caster", "assassin", "berserker", "extra"];
 const CLASS_LABELS: Record<string, string> = {
@@ -29,7 +29,7 @@ const EMPTY = {
 
 export function SupportProfiles() {
   const list = useAsync(fetchSupportProfiles, []);
-  const [form, setForm] = useState({ ...EMPTY });
+  const [form, setForm] = usePersistentState("py-fgo.support-profiles.form", { ...EMPTY });
 
   async function add() {
     await api.post("/api/support-profiles", { ...form, preferred: [] });
