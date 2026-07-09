@@ -16,9 +16,8 @@ from backend.core.errors import ValidationError
 
 
 POINTS: dict[str, str] = {
-    "QUEST_DETAIL_START": "关卡详情页：开始任务",
+    "QUEST_DETAIL_START": "关卡入口页：点击关卡",
     "QUEST_START_BUTTON": "队伍确认页：开始任务",
-    "QUEST_AUTO_BURN_CONFIRM": "自动变还弹窗：决定",
     "ATTACK_BUTTON": "战斗：Attack",
     "SUPPORT_FIRST_RECOMMENDED": "助战：推荐第一个",
     "RESULT_NEXT": "结算：下一步",

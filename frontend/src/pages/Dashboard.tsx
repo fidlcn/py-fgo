@@ -87,7 +87,7 @@ export function Dashboard() {
       >
         <div className="quick-start-body">
           <div>
-            先打开 MuMu 和 FGO，并停在关卡详情页。点击启动后，软件会自动检测模拟器、
+            先打开 MuMu 和 FGO，并停在关卡入口、助战选择或队伍确认页。点击启动后，软件会自动检测模拟器、
             确认 FGO 位于前台，必要时创建默认配置，然后开始执行任务。
           </div>
           {quickError && <div className="badge err">{quickError}</div>}

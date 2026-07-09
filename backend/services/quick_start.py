@@ -118,7 +118,7 @@ class QuickStartService:
 
         if fgo_device is None or package_name is None:
             raise ValidationError(
-                "检测到模拟器，但前台不是 FGO。请先在 MuMu 中打开 FGO 并停留在关卡详情页。",
+                "检测到模拟器，但前台不是 FGO。请先在 MuMu 中打开 FGO，并停留在关卡入口、助战选择或队伍确认页。",
                 code="FGO_NOT_RUNNING",
             )
 
@@ -128,7 +128,7 @@ class QuickStartService:
         state, confidence, matched_template = ctx.state_detector.detect(frame)
         if state not in SAFE_START_STATES:
             raise ValidationError(
-                f"FGO 已运行，但当前界面不支持一键启动：{state.value}。请进入关卡详情页后重试。",
+                f"FGO 已运行，但当前界面不支持一键启动：{state.value}。请进入关卡入口、助战选择或队伍确认页后重试。",
                 code="UNSUPPORTED_START_STATE",
             )
         return PreflightResult(instance, package_name, state, confidence, matched_template)

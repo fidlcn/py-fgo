@@ -17,7 +17,6 @@ from backend.core.errors import (
     APInsufficientError,
     BattlePlanError,
     FgoError,
-    StateDetectionError,
     SupportNotFoundError,
     TaskStoppedError,
 )
@@ -100,8 +99,13 @@ class QuestRunner:
 
     def run_quest(self) -> None:
         """Run exactly one quest: enter -> support -> party -> battle -> result."""
-        self._enter_quest()
-        self.support.select(self.support_profile)
+        state, _ = sm.sense(self.ctx)
+        if state == FgoState.PARTY_CONFIRM:
+            self.ctx.record_action("start from party confirm")
+        else:
+            if state != FgoState.SUPPORT_SELECT:
+                self._enter_quest()
+            self.support.select(self.support_profile)
         self._confirm_party()
         self.battle.run_plan(self.battle_plan)
         self._finish_result()
@@ -111,33 +115,13 @@ class QuestRunner:
     def _enter_quest(self) -> None:
         ctx = self.ctx
         state, _ = sm.sense(ctx)
-        if state == FgoState.SUPPORT_SELECT:
+        if state in (FgoState.SUPPORT_SELECT, FgoState.PARTY_CONFIRM):
             return
         if state != FgoState.QUEST_DETAIL:
             sm.wait_state(ctx, FgoState.QUEST_DETAIL, timeout=10.0)
         ctx.executor.tap_named("QUEST_DETAIL_START", C.QUEST_DETAIL_START)
-        ctx.record_action("tap quest start (from detail)")
-        try:
-            sm.wait_state(ctx, FgoState.SUPPORT_SELECT, timeout=12.0)
-        except StateDetectionError:
-            # FGO can show the "auto-burn target" confirmation dialog before
-            # support selection. It is not a normal persistent state, so use a
-            # conservative coordinate fallback only after support did not appear.
-            ctx.executor.tap_named("QUEST_AUTO_BURN_CONFIRM", C.QUEST_AUTO_BURN_CONFIRM)
-            ctx.record_action("confirm auto-burn target dialog")
-            try:
-                sm.wait_state(ctx, FgoState.SUPPORT_SELECT, timeout=5.0)
-                return
-            except StateDetectionError:
-                # If the tap closed an auto-burn settings dialog instead of a
-                # quest-entry confirmation, we are back on quest detail and
-                # must press the real Start button once more.
-                state, _ = sm.sense(ctx)
-                if state != FgoState.QUEST_DETAIL:
-                    sm.wait_state(ctx, FgoState.QUEST_DETAIL, timeout=5.0)
-                ctx.executor.tap_named("QUEST_DETAIL_START", C.QUEST_DETAIL_START)
-                ctx.record_action("tap quest start after auto-burn dialog")
-                sm.wait_state(ctx, FgoState.SUPPORT_SELECT, timeout=15.0)
+        ctx.record_action("tap quest entry")
+        sm.wait_state(ctx, FgoState.SUPPORT_SELECT, timeout=15.0)
 
     def _confirm_party(self) -> None:
         ctx = self.ctx
@@ -149,7 +133,7 @@ class QuestRunner:
         sm.wait_state(ctx, FgoState.BATTLE_COMMAND, timeout=30.0)
 
     def _finish_result(self) -> None:
-        """Tap through result screens; handle AP / friend requests; stop at detail."""
+        """Tap through result screens; handle AP / friend requests; stop at quest entry."""
         ctx = self.ctx
         ticks = 0
         max_ticks = 60
@@ -157,7 +141,7 @@ class QuestRunner:
             ctx.control.checkpoint()
             state, _ = sm.sense(ctx)
             if state == FgoState.QUEST_DETAIL:
-                ctx.record_action("back to quest detail; ready to repeat")
+                ctx.record_action("back to quest entry; ready to repeat")
                 return
             if state == FgoState.AP_INSUFFICIENT:
                 if self.recovery.handle_ap_insufficient(self.ap_recovery):
@@ -182,7 +166,7 @@ class QuestRunner:
                 # UNKNOWN / loading: nudge with a small wait.
                 time.sleep(0.7)
             ticks += 1
-        log.warning("result phase did not reach QUEST_DETAIL after %d ticks", max_ticks)
+        log.warning("result phase did not reach quest entry after %d ticks", max_ticks)
 
     # --- failure handling ----------------------------------------------
 

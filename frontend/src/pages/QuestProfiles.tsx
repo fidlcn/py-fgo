@@ -35,8 +35,8 @@ export function QuestProfiles() {
     <div>
       <h1 className="page-title">关卡配置</h1>
       <p className="page-sub">
-        MVP 使用 <code>current_quest</code> 入口模式：先手动打开关卡详情页，
-        软件从当前页面开始执行。
+        MVP 使用 <code>current_quest</code> 入口模式：先手动停在关卡入口页，
+        软件点击关卡后进入助战选择，再进入队伍确认和战斗。
       </p>
 
       <Card title="新建配置" style={{ marginBottom: 18 }}>
