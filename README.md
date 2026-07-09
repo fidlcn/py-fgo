@@ -131,10 +131,31 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 推荐：
 
 ```powershell
+.\start.bat
+```
+
+也可以使用 `scripts` 目录下的 cmd 包装脚本：
+
+```powershell
+.\scripts\start-dev.cmd
+```
+
+执行后会自动：
+
+1. 检查并创建 `.venv`；
+2. 安装后端依赖；
+3. 检查并安装前端依赖；
+4. 启动 FastAPI 后端；
+5. 启动 Vite 前端；
+6. 自动打开 Dashboard 图形界面。
+
+PowerShell 脚本也保留：
+
+```powershell
 .\scripts\start-dev.ps1
 ```
 
-也可以手动开两个终端：
+如果需要手动调试，也可以开两个终端：
 
 ```powershell
 # 终端 1：后端
