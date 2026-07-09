@@ -49,16 +49,16 @@ if exist "frontend\package.json" (
 
 echo [4/4] Starting backend and frontend...
 set "ROOT=%cd%"
-start "py-fgo backend" /D "%ROOT%" cmd /k ".venv\Scripts\python.exe -m uvicorn backend.app:app --reload --host 127.0.0.1 --port 8765"
+start "py-fgo backend" /D "%ROOT%" cmd /k ".venv\Scripts\python.exe -m uvicorn backend.app:app --reload --host localhost --port 8765"
 start "py-fgo frontend" /D "%ROOT%\frontend" cmd /k "npm run dev"
 
 echo Waiting for services to start...
 timeout /t 4 /nobreak >nul
-start "" "http://127.0.0.1:5173"
+start "" "http://localhost:5173"
 
 echo.
-echo Dashboard: http://127.0.0.1:5173
-echo API docs:  http://127.0.0.1:8765/docs
+echo Dashboard: http://localhost:5173
+echo API docs:  http://localhost:8765/docs
 echo.
 echo Two command windows were opened. Close them to stop the services.
 pause

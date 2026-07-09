@@ -44,6 +44,21 @@ def list_devices(adb_path: str = "adb", timeout: float = 5.0) -> list[AdbDevice]
     return devices
 
 
+def restart_adb_server(adb_path: str = "adb", timeout: float = 10.0) -> list[AdbDevice]:
+    """Run ``adb kill-server``, ``adb start-server``, then return ``adb devices``.
+
+    Used by the UI troubleshooting button when MuMu is running but ADB state is
+    stale. Failures are deliberately swallowed into an empty device list so the
+    API can return a predictable shape.
+    """
+    for args in (["kill-server"], ["start-server"]):
+        try:
+            subprocess.run([adb_path, *args], capture_output=True, timeout=timeout)
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return []
+    return list_devices(adb_path, timeout=timeout)
+
+
 def candidate_mumu_endpoints(host: str = MUMU_DEFAULT_HOST) -> list[str]:
     """Return likely ``host:port`` device ids for MuMu on the given host."""
     return [f"{host}:{port}" for port in MUMU_DEFAULT_PORTS]

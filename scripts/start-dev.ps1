@@ -7,7 +7,7 @@ Set-Location $root
 
 # Backend
 $env:PYTHONUNBUFFERED = "1"
-Start-Process -NoNewWindow python -ArgumentList "-m","uvicorn","backend.app:app","--reload","--host","127.0.0.1","--port","8765"
+Start-Process -NoNewWindow python -ArgumentList "-m","uvicorn","backend.app:app","--reload","--host","localhost","--port","8765"
 
 # Frontend (optional)
 if (Test-Path "$root/frontend/package.json") {
@@ -17,5 +17,5 @@ if (Test-Path "$root/frontend/package.json") {
     Pop-Location
 }
 
-Write-Host "Backend:  http://127.0.0.1:8765/docs"
-Write-Host "Frontend: http://127.0.0.1:5173"
+Write-Host "Backend:  http://localhost:8765/docs"
+Write-Host "Frontend: http://localhost:5173"

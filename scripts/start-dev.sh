@@ -13,7 +13,7 @@ if [ -f "$ROOT/.venv/bin/activate" ]; then
 fi
 
 export PYTHONUNBUFFERED=1
-python -m uvicorn backend.app:app --reload --host 127.0.0.1 --port 8765 &
+python -m uvicorn backend.app:app --reload --host localhost --port 8765 &
 BACKEND_PID=$!
 
 if [ -f "$ROOT/frontend/package.json" ]; then
@@ -22,6 +22,6 @@ if [ -f "$ROOT/frontend/package.json" ]; then
   npm run dev &
 fi
 
-echo "Backend:  http://127.0.0.1:8765/docs"
-echo "Frontend: http://127.0.0.1:5173"
+echo "Backend:  http://localhost:8765/docs"
+echo "Frontend: http://localhost:5173"
 wait "$BACKEND_PID"

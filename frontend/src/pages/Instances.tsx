@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAsync, fetchInstances, fetchScan } from "../api/hooks";
+import { useAsync, fetchInstances, fetchScan, restartAdb } from "../api/hooks";
 import { api } from "../api/client";
 import { Card, Empty, Field, StatusBadge } from "../components/ui";
 import type { ScanDevice } from "../types";
@@ -12,6 +12,7 @@ export function Instances() {
   const [scan, setScan] = useState<ScanDevice[] | null>(null);
   const [shot, setShot] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [adbBusy, setAdbBusy] = useState(false);
 
   async function add() {
     setBusy(true);
@@ -28,10 +29,31 @@ export function Instances() {
 
   async function test(id: string) {
     try {
-      const r = await api.post<{ online: boolean }>(`/api/instances/${id}/test`);
+      const r = await api.post<{ online: boolean; status: string }>(`/api/instances/${id}/test`);
       alert(r.online ? "设备在线 ✓" : "设备离线 ✗");
+      list.reload();
     } catch (e) {
       alert((e as Error).message);
+    }
+  }
+
+  async function scanDevices() {
+    setAdbBusy(true);
+    try {
+      setScan(await fetchScan());
+      list.reload();
+    } finally {
+      setAdbBusy(false);
+    }
+  }
+
+  async function restartAdbServer() {
+    setAdbBusy(true);
+    try {
+      setScan(await restartAdb());
+      list.reload();
+    } finally {
+      setAdbBusy(false);
     }
   }
 
@@ -86,12 +108,22 @@ export function Instances() {
         <Card
           title="ADB 扫描"
           actions={
-            <button
-              className="btn small secondary"
-              onClick={async () => setScan(await fetchScan())}
-            >
-              扫描设备
-            </button>
+            <>
+              <button
+                className="btn small secondary"
+                disabled={adbBusy}
+                onClick={scanDevices}
+              >
+                {adbBusy ? "执行中…" : "扫描设备"}
+              </button>
+              <button
+                className="btn small secondary"
+                disabled={adbBusy}
+                onClick={restartAdbServer}
+              >
+                重启 ADB 服务
+              </button>
+            </>
           }
         >
           {scan === null ? (

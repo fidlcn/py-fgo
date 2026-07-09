@@ -160,7 +160,7 @@ PowerShell 脚本也保留：
 ```powershell
 # 终端 1：后端
 .\.venv\Scripts\Activate.ps1
-python -m uvicorn backend.app:app --reload --host 127.0.0.1 --port 8765
+python -m uvicorn backend.app:app --reload --host localhost --port 8765
 ```
 
 ```powershell
@@ -171,9 +171,9 @@ npm run dev
 
 访问地址：
 
-- Dashboard：<http://127.0.0.1:5173>
-- API 文档：<http://127.0.0.1:8765/docs>
-- 健康检查：<http://127.0.0.1:8765/health>
+- Dashboard：<http://localhost:5173>
+- API 文档：<http://localhost:8765/docs>
+- 健康检查：<http://localhost:8765/health>
 
 ## MuMu / ADB 要求
 

@@ -66,14 +66,25 @@ def scan_adb(instances: InstanceManager = Depends(get_instance_manager)):
     return response.ok(instances.scan_adb())
 
 
+@router.post("/restart-adb")
+def restart_adb(instances: InstanceManager = Depends(get_instance_manager)):
+    return response.ok(instances.restart_adb())
+
+
 @router.post("/{instance_id}/test")
 def test_instance(
     instance_id: str,
     db: Session = Depends(db_session),
     instances: InstanceManager = Depends(get_instance_manager),
 ):
-    inst = r.get_instance(db, instance_id).to_dict()
-    return response.ok(instances.test_connection(inst))
+    inst_model = r.get_instance(db, instance_id)
+    result = instances.test_connection(inst_model.to_dict())
+    status = "idle" if result["online"] else "offline"
+    if inst_model.status != "running":
+        r.update_instance(db, instance_id, {"status": status})
+        db.flush()
+    result["status"] = status if inst_model.status != "running" else inst_model.status
+    return response.ok(result)
 
 
 @router.get("/{instance_id}/screenshot")

@@ -11,7 +11,7 @@ from typing import Any
 from backend.core.config import AppConfig
 from backend.core.logging import get_logger
 from worker.adb_client import ADBClient
-from worker.mumu_provider import list_devices
+from worker.mumu_provider import list_devices, restart_adb_server
 
 log = get_logger("services.instance")
 
@@ -42,4 +42,8 @@ class InstanceManager:
 
     def scan_adb(self) -> list[dict[str, str]]:
         devices = list_devices(self.config.adb.path)
+        return [{"device_id": d.device_id, "state": d.state} for d in devices]
+
+    def restart_adb(self) -> list[dict[str, str]]:
+        devices = restart_adb_server(self.config.adb.path)
         return [{"device_id": d.device_id, "state": d.state} for d in devices]

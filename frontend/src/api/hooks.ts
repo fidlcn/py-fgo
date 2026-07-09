@@ -66,3 +66,4 @@ export const fetchSupportProfiles = () => api.get<SupportProfile[]>("/api/suppor
 export const fetchBattlePlans = () => api.get<BattlePlan[]>("/api/battle-plans");
 export const fetchTasks = () => api.get<RunTask[]>("/api/tasks");
 export const fetchScan = () => api.post<ScanDevice[]>("/api/instances/scan-adb");
+export const restartAdb = () => api.post<ScanDevice[]>("/api/instances/restart-adb");
