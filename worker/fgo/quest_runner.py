@@ -118,7 +118,7 @@ class QuestRunner:
                 sm.wait_state(ctx, FgoState.QUEST_DETAIL, timeout=10.0)
             except Exception:  # noqa: BLE001 - proceed optimistically
                 log.warning("not on QUEST_DETAIL; proceeding optimistically")
-        ctx.executor.tap_point(C.QUEST_DETAIL_START)
+        ctx.executor.tap_named("QUEST_DETAIL_START", C.QUEST_DETAIL_START)
         ctx.record_action("tap quest start (from detail)")
         try:
             sm.wait_state(ctx, FgoState.SUPPORT_SELECT, timeout=12.0)
@@ -126,7 +126,7 @@ class QuestRunner:
             # FGO can show the "auto-burn target" confirmation dialog before
             # support selection. It is not a normal persistent state, so use a
             # conservative coordinate fallback only after support did not appear.
-            ctx.executor.tap_point(C.QUEST_AUTO_BURN_CONFIRM)
+            ctx.executor.tap_named("QUEST_AUTO_BURN_CONFIRM", C.QUEST_AUTO_BURN_CONFIRM)
             ctx.record_action("confirm auto-burn target dialog")
             sm.wait_state(ctx, FgoState.SUPPORT_SELECT, timeout=15.0)
 

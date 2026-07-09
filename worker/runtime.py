@@ -146,7 +146,11 @@ def build_worker_context(
     width = instance.get("resolution_width", 1280)
     height = instance.get("resolution_height", 720)
     executor = ActionExecutor(
-        adb, width, height, action_delay_ms=config.runtime.action_delay_ms
+        adb,
+        width,
+        height,
+        action_delay_ms=config.runtime.action_delay_ms,
+        coordinate_overrides=config.coordinates.overrides,
     )
     control = Control()
     return WorkerContext(

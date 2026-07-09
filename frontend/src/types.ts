@@ -153,3 +153,13 @@ export interface QuickStartResult {
     battle_plan_id: string;
   };
 }
+
+export interface CalibrationPoint {
+  key: string;
+  label: string;
+}
+
+export interface CalibrationData {
+  available: CalibrationPoint[];
+  overrides: Record<string, [number, number]>;
+}

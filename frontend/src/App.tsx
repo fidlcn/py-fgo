@@ -8,6 +8,7 @@ import { Tasks } from "./pages/Tasks";
 import { RunMonitor } from "./pages/RunMonitor";
 import { LogsPage } from "./pages/Logs";
 import { Settings } from "./pages/Settings";
+import { Calibration } from "./pages/Calibration";
 
 const NAV = [
   { to: "/", label: "首页", end: true },
@@ -17,6 +18,7 @@ const NAV = [
   { to: "/plans", label: "战斗方案" },
   { to: "/tasks", label: "任务" },
   { to: "/monitor", label: "运行监控" },
+  { to: "/calibration", label: "坐标校准" },
   { to: "/logs", label: "日志" },
   { to: "/settings", label: "设置" },
 ];
@@ -48,6 +50,7 @@ export default function App() {
           <Route path="/plans" element={<BattlePlans />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/monitor" element={<RunMonitor />} />
+          <Route path="/calibration" element={<Calibration />} />
           <Route path="/logs" element={<LogsPage />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>

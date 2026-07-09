@@ -8,6 +8,7 @@ the YAML source.
 from __future__ import annotations
 
 from dataclasses import dataclass, field, fields, is_dataclass
+import json
 from pathlib import Path
 from typing import Any, Tuple
 
@@ -16,6 +17,7 @@ import yaml
 # Root of the repository: backend/core/config.py -> up three levels.
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
+DEFAULT_COORDINATES_PATH = REPO_ROOT / "configs" / "coordinates.json"
 DEFAULT_DB_PATH = REPO_ROOT / "data" / "app.db"
 DEFAULT_LOG_DIR = REPO_ROOT / "logs"
 DEFAULT_SCREENSHOT_DIR = DEFAULT_LOG_DIR / "screenshots"
@@ -70,6 +72,11 @@ class FgoConfig:
 
 
 @dataclass
+class CoordinatesConfig:
+    overrides: dict[str, tuple[int, int]] = field(default_factory=dict)
+
+
+@dataclass
 class AppConfig:
     server: ServerConfig = field(default_factory=ServerConfig)
     adb: AdbConfig = field(default_factory=AdbConfig)
@@ -77,6 +84,7 @@ class AppConfig:
     vision: VisionConfig = field(default_factory=VisionConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     fgo: FgoConfig = field(default_factory=FgoConfig)
+    coordinates: CoordinatesConfig = field(default_factory=CoordinatesConfig)
 
     # Paths resolved relative to the repo root.
     db_path: Path = field(default_factory=lambda: DEFAULT_DB_PATH)
@@ -106,6 +114,7 @@ class AppConfig:
         _apply_section(config.vision, raw.get("vision", {}))
         _apply_section(config.logging, raw.get("logging", {}))
         _apply_section(config.fgo, raw.get("fgo", {}), casts={"package_names": tuple})
+        config.coordinates.overrides = _load_coordinate_overrides(DEFAULT_COORDINATES_PATH)
         return config
 
     def ensure_dirs(self) -> None:
@@ -113,6 +122,7 @@ class AppConfig:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.screenshot_dir.mkdir(parents=True, exist_ok=True)
+        DEFAULT_COORDINATES_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
 def _apply_section(instance: Any, data: dict, casts: dict[str, Any] | None = None) -> None:
@@ -124,3 +134,22 @@ def _apply_section(instance: Any, data: dict, casts: dict[str, Any] | None = Non
     for key, value in (data or {}).items():
         if key in valid and value is not None:
             setattr(instance, key, casts.get(key, lambda v: v)(value))
+
+
+def _load_coordinate_overrides(path: Path) -> dict[str, tuple[int, int]]:
+    if not path.exists():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    overrides: dict[str, tuple[int, int]] = {}
+    for key, value in (raw or {}).items():
+        if (
+            isinstance(key, str)
+            and isinstance(value, list)
+            and len(value) == 2
+            and all(isinstance(v, int) for v in value)
+        ):
+            overrides[key] = (value[0], value[1])
+    return overrides

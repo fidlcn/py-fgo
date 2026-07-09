@@ -24,6 +24,7 @@ from backend.core.events import EventBus, bus as default_bus
 from backend.core.logging import configure_logging, get_logger
 from backend.db.session import Database, init_db
 from backend.services.instance_manager import InstanceManager
+from backend.services.calibration import CalibrationService
 from backend.services.quick_start import QuickStartService
 from backend.services.scheduler import Scheduler
 from backend.services.task_manager import TaskManager
@@ -31,6 +32,7 @@ from backend.services.worker_manager import WorkerManager
 
 from .api import (
     battle_plans,
+    calibration,
     instances,
     logs,
     quick_start,
@@ -60,6 +62,7 @@ def create_app(
     instance_manager = InstanceManager(config)
     task_manager = TaskManager(worker_manager, instance_manager)
     quick_start_service = QuickStartService(config, instance_manager, task_manager)
+    calibration_service = CalibrationService(config)
     scheduler = Scheduler()
 
     @asynccontextmanager
@@ -80,6 +83,7 @@ def create_app(
     app.state.instance_manager = instance_manager
     app.state.task_manager = task_manager
     app.state.quick_start_service = quick_start_service
+    app.state.calibration_service = calibration_service
     app.state.scheduler = scheduler
 
     # CORS: allow the Vite dev server and LAN clients (spec section 11).
@@ -133,6 +137,7 @@ def create_app(
     app.include_router(instances.router)
     app.include_router(tasks.router)
     app.include_router(quick_start.router)
+    app.include_router(calibration.router)
     app.include_router(logs.router)
     app.include_router(settings.router)
     app.include_router(ws.router)

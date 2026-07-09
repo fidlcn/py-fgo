@@ -15,6 +15,7 @@ from backend.core.config import AppConfig
 from backend.core.events import EventBus
 from backend.db.session import Database
 from backend.services.instance_manager import InstanceManager
+from backend.services.calibration import CalibrationService
 from backend.services.quick_start import QuickStartService
 from backend.services.scheduler import Scheduler
 from backend.services.task_manager import TaskManager
@@ -57,6 +58,10 @@ def get_task_manager(request: Request) -> TaskManager:
 
 def get_quick_start_service(request: Request) -> QuickStartService:
     return request.app.state.quick_start_service
+
+
+def get_calibration_service(request: Request) -> CalibrationService:
+    return request.app.state.calibration_service
 
 
 def get_scheduler(request: Request) -> Scheduler:

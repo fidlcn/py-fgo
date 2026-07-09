@@ -260,6 +260,10 @@ textarea:focus {
   color: var(--muted);
 }
 
+.calibration-shot {
+  cursor: crosshair;
+}
+
 .stat {
   display: flex;
   flex-direction: column;
