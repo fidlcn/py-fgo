@@ -90,6 +90,11 @@ class TaskManager:
             inst = r.get_instance(s, task.instance_id)
             if self.workers.is_running(inst.id):
                 raise ConflictError("instance already has a running task")
+            if task.status == "stopping":
+                r.update_task(s, task_id, {"status": "stopped", "finished_at": datetime.utcnow()})
+                r.update_instance(s, inst.id, {"status": "idle", "current_task_id": None})
+                s.commit()
+                task = r.get_task(s, task_id)
             if task.status not in ("pending", "paused", "stopped", "failed", "completed"):
                 raise ConflictError(f"cannot start task in status '{task.status}'")
 

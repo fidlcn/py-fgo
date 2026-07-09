@@ -12,6 +12,7 @@ export function Dashboard() {
   const [quickBusy, setQuickBusy] = useState(false);
   const [quickError, setQuickError] = useState<string | null>(null);
   const [quickResult, setQuickResult] = useState<QuickStartResult | null>(null);
+  const [controlError, setControlError] = useState<string | null>(null);
 
   // Index latest task per instance.
   const taskByInstance = useMemo(() => {
@@ -36,9 +37,16 @@ export function Dashboard() {
 
   async function control(taskId: string | undefined, action: "start" | "pause" | "resume" | "stop") {
     if (!taskId) return;
-    await api.post(`/api/tasks/${taskId}/${action}`);
-    tasks.reload();
-    inst.reload();
+    setControlError(null);
+    try {
+      await api.post(`/api/tasks/${taskId}/${action}`);
+      tasks.reload();
+      inst.reload();
+    } catch (e) {
+      setControlError(e instanceof Error ? e.message : String(e));
+      tasks.reload();
+      inst.reload();
+    }
   }
 
   async function quickStart() {
@@ -95,6 +103,7 @@ export function Dashboard() {
 
       {inst.loading && <p className="muted">加载中…</p>}
       {inst.error && <p className="badge err">{inst.error}</p>}
+      {controlError && <p className="badge err">操作失败：{controlError}</p>}
 
       <div className="grid">
         {(inst.data ?? []).map((i: Instance) => {
@@ -103,6 +112,10 @@ export function Dashboard() {
           const state = (l.state as string) ?? i.live_state ?? "—";
           const completed = (l.completed_count as number) ?? i.live_completed ?? 0;
           const action = (l.last_action as string) ?? i.live_action ?? "";
+          const canStart = !!task && ["pending", "paused", "stopped", "failed", "completed"].includes(task.status);
+          const canPause = task?.status === "running";
+          const canResume = task?.status === "paused";
+          const canStop = ["running", "paused"].includes(task?.status ?? "");
           return (
             <Card
               key={i.id}
@@ -117,28 +130,28 @@ export function Dashboard() {
                 <div className="row">
                   <button
                     className="btn small"
-                    disabled={!task || task.status === "running"}
+                    disabled={!canStart}
                     onClick={() => control(task?.id, "start")}
                   >
                     启动
                   </button>
                   <button
                     className="btn small secondary"
-                    disabled={task?.status !== "running"}
+                    disabled={!canPause}
                     onClick={() => control(task?.id, "pause")}
                   >
                     暂停
                   </button>
                   <button
                     className="btn small secondary"
-                    disabled={!["running", "paused"].includes(task?.status ?? "")}
+                    disabled={!canResume}
                     onClick={() => control(task?.id, "resume")}
                   >
                     继续
                   </button>
                   <button
                     className="btn small danger"
-                    disabled={!["running", "paused"].includes(task?.status ?? "")}
+                    disabled={!canStop}
                     onClick={() => control(task?.id, "stop")}
                   >
                     停止

@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useAsync, fetchInstances, fetchQuestProfiles, fetchSupportProfiles, fetchBattlePlans, fetchTasks } from "../api/hooks";
 import { api } from "../api/client";
 import { Card, Empty, Field, StatusBadge } from "../components/ui";
 import { usePersistentState } from "../hooks/usePersistentState";
+import type { RunTask } from "../types";
 
 const EMPTY_DRAFT = {
   instanceId: "",
@@ -22,6 +24,7 @@ export function Tasks() {
   const tasks = useAsync(fetchTasks, []);
 
   const [draft, setDraft] = usePersistentState("py-fgo.tasks.create-draft", EMPTY_DRAFT);
+  const [controlError, setControlError] = useState<string | null>(null);
 
   const ready = draft.instanceId && draft.questId && draft.supportId && draft.planId;
 
@@ -43,8 +46,14 @@ export function Tasks() {
   }
 
   async function control(id: string, action: "start" | "pause" | "resume" | "stop") {
-    await api.post(`/api/tasks/${id}/${action}`);
-    tasks.reload();
+    setControlError(null);
+    try {
+      await api.post(`/api/tasks/${id}/${action}`);
+      tasks.reload();
+    } catch (e) {
+      setControlError(e instanceof Error ? e.message : String(e));
+      tasks.reload();
+    }
   }
 
   return (
@@ -142,6 +151,11 @@ export function Tasks() {
       </div>
 
       <Card title="任务列表">
+        {controlError && (
+          <div className="badge err" style={{ marginBottom: 12 }}>
+            操作失败：{controlError}
+          </div>
+        )}
         {tasks.data && tasks.data.length === 0 ? (
           <Empty>还没有任务。</Empty>
         ) : (
@@ -158,38 +172,55 @@ export function Tasks() {
             </thead>
             <tbody>
               {tasks.data?.map((t) => (
-                <tr key={t.id}>
-                  <td className="muted">{t.id}</td>
-                  <td>
-                    <StatusBadge status={t.status} />
-                  </td>
-                  <td>{t.completed_count}</td>
-                  <td>{t.failure_count}</td>
-                  <td className="muted" style={{ maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {t.last_error ?? "—"}
-                  </td>
-                  <td>
-                    <div className="row">
-                      <button className="btn small" disabled={t.status === "running"} onClick={() => control(t.id, "start")}>
-                        启动
-                      </button>
-                      <button className="btn small secondary" disabled={t.status !== "running"} onClick={() => control(t.id, "pause")}>
-                        暂停
-                      </button>
-                      <button className="btn small secondary" disabled={!["running", "paused"].includes(t.status)} onClick={() => control(t.id, "resume")}>
-                        继续
-                      </button>
-                      <button className="btn small danger" disabled={!["running", "paused"].includes(t.status)} onClick={() => control(t.id, "stop")}>
-                        停止
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                <TaskRow key={t.id} task={t} control={control} />
               ))}
             </tbody>
           </table>
         )}
       </Card>
     </div>
+  );
+}
+
+function TaskRow({
+  task,
+  control,
+}: {
+  task: RunTask;
+  control: (id: string, action: "start" | "pause" | "resume" | "stop") => void;
+}) {
+  const canStart = ["pending", "paused", "stopped", "failed", "completed"].includes(task.status);
+  const canPause = task.status === "running";
+  const canResume = task.status === "paused";
+  const canStop = ["running", "paused"].includes(task.status);
+
+  return (
+    <tr>
+      <td className="muted">{task.id}</td>
+      <td>
+        <StatusBadge status={task.status} />
+      </td>
+      <td>{task.completed_count}</td>
+      <td>{task.failure_count}</td>
+      <td className="muted" style={{ maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis" }}>
+        {task.last_error ?? "—"}
+      </td>
+      <td>
+        <div className="row">
+          <button className="btn small" disabled={!canStart} onClick={() => control(task.id, "start")}>
+            启动
+          </button>
+          <button className="btn small secondary" disabled={!canPause} onClick={() => control(task.id, "pause")}>
+            暂停
+          </button>
+          <button className="btn small secondary" disabled={!canResume} onClick={() => control(task.id, "resume")}>
+            继续
+          </button>
+          <button className="btn small danger" disabled={!canStop} onClick={() => control(task.id, "stop")}>
+            停止
+          </button>
+        </div>
+      </td>
+    </tr>
   );
 }

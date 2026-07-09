@@ -128,6 +128,29 @@ def test_stop_sets_stopping(setup):
     assert ids["instance"] in workers.stopped
 
 
+def test_start_recovers_stale_stopping_task(setup):
+    tm, workers, ids = setup
+    task = tm.create_task(
+        {
+            "instance_id": ids["instance"],
+            "quest_profile_id": ids["quest"],
+            "support_profile_id": ids["support"],
+            "battle_plan_id": ids["battle"],
+        }
+    )
+    db = get_db()
+    s = db.session()
+    r.update_task(s, task["id"], {"status": "stopping"})
+    r.update_instance(s, ids["instance"], {"status": "running", "current_task_id": task["id"]})
+    s.commit()
+    s.close()
+
+    started = tm.start(task["id"])
+
+    assert started["status"] == "running"
+    assert task["id"] in workers.started
+
+
 def test_on_done_finalizes_status(setup):
     tm, workers, ids = setup
     task = tm.create_task(
