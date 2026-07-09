@@ -17,6 +17,7 @@ from backend.core.errors import (
     APInsufficientError,
     BattlePlanError,
     FgoError,
+    StateDetectionError,
     SupportNotFoundError,
     TaskStoppedError,
 )
@@ -119,7 +120,15 @@ class QuestRunner:
                 log.warning("not on QUEST_DETAIL; proceeding optimistically")
         ctx.executor.tap_point(C.QUEST_DETAIL_START)
         ctx.record_action("tap quest start (from detail)")
-        sm.wait_state(ctx, FgoState.SUPPORT_SELECT, timeout=20.0)
+        try:
+            sm.wait_state(ctx, FgoState.SUPPORT_SELECT, timeout=12.0)
+        except StateDetectionError:
+            # FGO can show the "auto-burn target" confirmation dialog before
+            # support selection. It is not a normal persistent state, so use a
+            # conservative coordinate fallback only after support did not appear.
+            ctx.executor.tap_point(C.QUEST_AUTO_BURN_CONFIRM)
+            ctx.record_action("confirm auto-burn target dialog")
+            sm.wait_state(ctx, FgoState.SUPPORT_SELECT, timeout=15.0)
 
     def _confirm_party(self) -> None:
         ctx = self.ctx

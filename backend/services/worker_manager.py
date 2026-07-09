@@ -146,7 +146,9 @@ class WorkerManager:
     # --- internal -------------------------------------------------------
 
     def _on_status(self, instance_id: str, payload: dict[str, Any]) -> None:
-        self._bus.publish(INSTANCE_STATUS, instance_id=instance_id, **payload)
+        event_payload = dict(payload)
+        event_payload["instance_id"] = instance_id
+        self._bus.publish(INSTANCE_STATUS, **event_payload)
         self._maybe_persist(instance_id, payload)
 
     def _maybe_persist(self, instance_id: str, payload: dict[str, Any]) -> None:
