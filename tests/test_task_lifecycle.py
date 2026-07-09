@@ -151,6 +151,51 @@ def test_start_recovers_stale_stopping_task(setup):
     assert task["id"] in workers.started
 
 
+def test_list_tasks_recovers_stale_stopping_task(setup):
+    tm, _, ids = setup
+    task = tm.create_task(
+        {
+            "instance_id": ids["instance"],
+            "quest_profile_id": ids["quest"],
+            "support_profile_id": ids["support"],
+            "battle_plan_id": ids["battle"],
+        }
+    )
+    db = get_db()
+    s = db.session()
+    r.update_task(s, task["id"], {"status": "stopping"})
+    r.update_instance(s, ids["instance"], {"status": "running", "current_task_id": task["id"]})
+    s.commit()
+    s.close()
+
+    listed = tm.list_tasks()
+
+    assert listed[0]["id"] == task["id"]
+    assert listed[0]["status"] == "stopped"
+
+
+def test_reset_stale_stopping_task(setup):
+    tm, _, ids = setup
+    task = tm.create_task(
+        {
+            "instance_id": ids["instance"],
+            "quest_profile_id": ids["quest"],
+            "support_profile_id": ids["support"],
+            "battle_plan_id": ids["battle"],
+        }
+    )
+    db = get_db()
+    s = db.session()
+    r.update_task(s, task["id"], {"status": "stopping"})
+    r.update_instance(s, ids["instance"], {"status": "running", "current_task_id": task["id"]})
+    s.commit()
+    s.close()
+
+    reset = tm.reset(task["id"])
+
+    assert reset["status"] == "stopped"
+
+
 def test_on_done_finalizes_status(setup):
     tm, workers, ids = setup
     task = tm.create_task(

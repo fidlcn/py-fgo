@@ -35,7 +35,7 @@ export function Dashboard() {
     return map;
   }, [events]);
 
-  async function control(taskId: string | undefined, action: "start" | "pause" | "resume" | "stop") {
+  async function control(taskId: string | undefined, action: TaskAction) {
     if (!taskId) return;
     setControlError(null);
     try {
@@ -116,6 +116,7 @@ export function Dashboard() {
           const canPause = task?.status === "running";
           const canResume = task?.status === "paused";
           const canStop = ["running", "paused"].includes(task?.status ?? "");
+          const canReset = task?.status === "stopping";
           return (
             <Card
               key={i.id}
@@ -156,6 +157,13 @@ export function Dashboard() {
                   >
                     停止
                   </button>
+                  <button
+                    className="btn small secondary"
+                    disabled={!canReset}
+                    onClick={() => control(task?.id, "reset")}
+                  >
+                    重置
+                  </button>
                 </div>
               }
             >
@@ -190,3 +198,5 @@ export function Dashboard() {
     </div>
   );
 }
+
+type TaskAction = "start" | "pause" | "resume" | "stop" | "reset";

@@ -59,3 +59,8 @@ def resume_task(task_id: str, tasks: TaskManager = Depends(get_task_manager)):
 @router.post("/{task_id}/stop")
 def stop_task(task_id: str, tasks: TaskManager = Depends(get_task_manager)):
     return response.ok(tasks.stop(task_id))
+
+
+@router.post("/{task_id}/reset")
+def reset_task(task_id: str, tasks: TaskManager = Depends(get_task_manager)):
+    return response.ok(tasks.reset(task_id))

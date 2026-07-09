@@ -68,7 +68,24 @@ class TaskManager:
         db = self._db_factory()
         s = db.session()
         try:
-            return [t.to_dict() for t in r.list_tasks(s, instance_id)]
+            tasks = r.list_tasks(s, instance_id)
+            changed = False
+            for task in tasks:
+                if task.status == "stopping" and not self.workers.is_running(task.instance_id):
+                    r.update_task(
+                        s,
+                        task.id,
+                        {"status": "stopped", "finished_at": datetime.utcnow()},
+                    )
+                    r.update_instance(
+                        s,
+                        task.instance_id,
+                        {"status": "idle", "current_task_id": None},
+                    )
+                    changed = True
+            if changed:
+                s.commit()
+            return [t.to_dict() for t in tasks]
         finally:
             s.close()
 
@@ -138,6 +155,21 @@ class TaskManager:
 
     def stop(self, task_id: str) -> dict[str, Any]:
         return self._flag(task_id, "stopping", lambda iid: self.workers.request_stop(iid))
+
+    def reset(self, task_id: str) -> dict[str, Any]:
+        db = self._db_factory()
+        s = db.session()
+        try:
+            task = r.get_task(s, task_id)
+            if self.workers.is_running(task.instance_id):
+                raise ConflictError("cannot reset a task while worker is still running")
+            r.update_task(s, task_id, {"status": "stopped", "finished_at": datetime.utcnow()})
+            r.update_instance(s, task.instance_id, {"status": "idle", "current_task_id": None})
+            s.commit()
+        finally:
+            s.close()
+        bus.publish(TASK_STATUS, task_id=task_id, status="stopped")
+        return self.get_task(task_id)
 
     def _flag(self, task_id: str, new_status: str, worker_op) -> dict[str, Any]:
         db = self._db_factory()

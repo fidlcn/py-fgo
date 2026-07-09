@@ -45,7 +45,7 @@ export function Tasks() {
     tasks.reload();
   }
 
-  async function control(id: string, action: "start" | "pause" | "resume" | "stop") {
+  async function control(id: string, action: TaskAction) {
     setControlError(null);
     try {
       await api.post(`/api/tasks/${id}/${action}`);
@@ -187,12 +187,13 @@ function TaskRow({
   control,
 }: {
   task: RunTask;
-  control: (id: string, action: "start" | "pause" | "resume" | "stop") => void;
+  control: (id: string, action: TaskAction) => void;
 }) {
   const canStart = ["pending", "paused", "stopped", "failed", "completed"].includes(task.status);
   const canPause = task.status === "running";
   const canResume = task.status === "paused";
   const canStop = ["running", "paused"].includes(task.status);
+  const canReset = task.status === "stopping";
 
   return (
     <tr>
@@ -219,8 +220,13 @@ function TaskRow({
           <button className="btn small danger" disabled={!canStop} onClick={() => control(task.id, "stop")}>
             停止
           </button>
+          <button className="btn small secondary" disabled={!canReset} onClick={() => control(task.id, "reset")}>
+            重置
+          </button>
         </div>
       </td>
     </tr>
   );
 }
+
+type TaskAction = "start" | "pause" | "resume" | "stop" | "reset";
