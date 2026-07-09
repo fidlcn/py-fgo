@@ -10,15 +10,15 @@ import { LogsPage } from "./pages/Logs";
 import { Settings } from "./pages/Settings";
 
 const NAV = [
-  { to: "/", label: "Dashboard", end: true },
-  { to: "/instances", label: "Instances" },
-  { to: "/quests", label: "Quest Profiles" },
-  { to: "/support", label: "Support Profiles" },
-  { to: "/plans", label: "Battle Plans" },
-  { to: "/tasks", label: "Tasks" },
-  { to: "/monitor", label: "Run Monitor" },
-  { to: "/logs", label: "Logs" },
-  { to: "/settings", label: "Settings" },
+  { to: "/", label: "首页", end: true },
+  { to: "/instances", label: "模拟器" },
+  { to: "/quests", label: "关卡配置" },
+  { to: "/support", label: "助战配置" },
+  { to: "/plans", label: "战斗方案" },
+  { to: "/tasks", label: "任务" },
+  { to: "/monitor", label: "运行监控" },
+  { to: "/logs", label: "日志" },
+  { to: "/settings", label: "设置" },
 ];
 
 export default function App() {
@@ -26,7 +26,7 @@ export default function App() {
     <div className="app">
       <nav className="sidebar">
         <div className="brand">
-          <span className="dot" /> FGO Bot
+          <span className="dot" /> FGO 助手
         </div>
         {NAV.map((n) => (
           <NavLink

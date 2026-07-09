@@ -42,41 +42,41 @@ export function Settings() {
 
   return (
     <div>
-      <h1 className="page-title">Settings</h1>
-      <p className="page-sub">Runtime-tunable configuration (in memory).</p>
+      <h1 className="page-title">设置</h1>
+      <p className="page-sub">运行时可调整配置（当前进程内生效）。</p>
 
       {data && (
         <div className="grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-          <Card title="Current config">
+          <Card title="当前配置">
             <pre className="log">{JSON.stringify(data, null, 2)}</pre>
           </Card>
 
           <Card
-            title="Adjust"
+            title="调整"
             actions={
               <>
-                {saved && <span className="badge ok">saved</span>}
-                {!patch.logging_level && <button className="btn small secondary" onClick={init}>Load current</button>}
-                <button className="btn small" onClick={save}>Save</button>
+                {saved && <span className="badge ok">已保存</span>}
+                {!patch.logging_level && <button className="btn small secondary" onClick={init}>载入当前配置</button>}
+                <button className="btn small" onClick={save}>保存</button>
               </>
             }
           >
-            <Field label="Log level">
+            <Field label="日志等级">
               <input value={patch.logging_level} onChange={(e) => setPatch({ ...patch, logging_level: e.target.value })} />
             </Field>
             <div className="row">
-              <Field label="Screenshot interval (ms)">
+              <Field label="截图间隔（毫秒）">
                 <input type="number" value={patch.screenshot_interval_ms} onChange={(e) => setPatch({ ...patch, screenshot_interval_ms: +e.target.value })} />
               </Field>
-              <Field label="Action delay (ms)">
+              <Field label="动作延迟（毫秒）">
                 <input type="number" value={patch.action_delay_ms} onChange={(e) => setPatch({ ...patch, action_delay_ms: +e.target.value })} />
               </Field>
             </div>
             <div className="row">
-              <Field label="Template threshold">
+              <Field label="模板匹配阈值">
                 <input type="number" step="0.01" value={patch.template_threshold} onChange={(e) => setPatch({ ...patch, template_threshold: +e.target.value })} />
               </Field>
-              <Field label="State threshold">
+              <Field label="状态识别阈值">
                 <input type="number" step="0.01" value={patch.state_threshold} onChange={(e) => setPatch({ ...patch, state_threshold: +e.target.value })} />
               </Field>
             </div>

@@ -40,14 +40,14 @@ export function Tasks() {
 
   return (
     <div>
-      <h1 className="page-title">Tasks</h1>
-      <p className="page-sub">Bind an instance to a quest, support profile, and battle plan.</p>
+      <h1 className="page-title">任务</h1>
+      <p className="page-sub">将模拟器实例、关卡配置、助战配置和战斗方案绑定为一次运行任务。</p>
 
       <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", marginBottom: 18 }}>
-        <Card title="Create task">
-          <Field label="Instance">
+        <Card title="创建任务">
+          <Field label="模拟器实例">
             <select value={instanceId} onChange={(e) => setInstanceId(e.target.value)}>
-              <option value="">— select —</option>
+              <option value="">— 请选择 —</option>
               {inst.data?.map((i) => (
                 <option key={i.id} value={i.id}>
                   {i.name} ({i.adb_device_id})
@@ -55,9 +55,9 @@ export function Tasks() {
               ))}
             </select>
           </Field>
-          <Field label="Quest profile">
+          <Field label="关卡配置">
             <select value={questId} onChange={(e) => setQuestId(e.target.value)}>
-              <option value="">— select —</option>
+              <option value="">— 请选择 —</option>
               {qp.data?.map((q) => (
                 <option key={q.id} value={q.id}>
                   {q.name}
@@ -65,9 +65,9 @@ export function Tasks() {
               ))}
             </select>
           </Field>
-          <Field label="Support profile">
+          <Field label="助战配置">
             <select value={supportId} onChange={(e) => setSupportId(e.target.value)}>
-              <option value="">— select —</option>
+              <option value="">— 请选择 —</option>
               {sp.data?.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -75,9 +75,9 @@ export function Tasks() {
               ))}
             </select>
           </Field>
-          <Field label="Battle plan">
+          <Field label="战斗方案">
             <select value={planId} onChange={(e) => setPlanId(e.target.value)}>
-              <option value="">— select —</option>
+              <option value="">— 请选择 —</option>
               {bp.data?.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -86,41 +86,41 @@ export function Tasks() {
             </select>
           </Field>
           <div className="row">
-            <Field label="Repeat count">
+            <Field label="循环次数">
               <input type="number" value={count} onChange={(e) => setCount(+e.target.value)} style={{ width: 100 }} />
             </Field>
-            <Field label="Max failures">
+            <Field label="最大失败次数">
               <input type="number" value={maxFail} onChange={(e) => setMaxFail(+e.target.value)} style={{ width: 100 }} />
             </Field>
           </div>
           <div className="row">
             <label className="row">
               <input type="checkbox" checked={stopOnFail} onChange={(e) => setStopOnFail(e.target.checked)} />
-              Stop on failure
+              失败后停止
             </label>
             <label className="row">
               <input type="checkbox" checked={apEnabled} onChange={(e) => setApEnabled(e.target.checked)} />
-              Auto AP recovery
+              自动恢复 AP
             </label>
           </div>
           <button className="btn" disabled={!ready} onClick={create}>
-            Create task
+            创建任务
           </button>
         </Card>
       </div>
 
-      <Card title="Tasks">
+      <Card title="任务列表">
         {tasks.data && tasks.data.length === 0 ? (
-          <Empty>No tasks yet.</Empty>
+          <Empty>还没有任务。</Empty>
         ) : (
           <table>
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Status</th>
-                <th>Completed</th>
-                <th>Failures</th>
-                <th>Last error</th>
+                <th>状态</th>
+                <th>已完成</th>
+                <th>失败次数</th>
+                <th>最近错误</th>
                 <th></th>
               </tr>
             </thead>
@@ -139,16 +139,16 @@ export function Tasks() {
                   <td>
                     <div className="row">
                       <button className="btn small" disabled={t.status === "running"} onClick={() => control(t.id, "start")}>
-                        Start
+                        启动
                       </button>
                       <button className="btn small secondary" disabled={t.status !== "running"} onClick={() => control(t.id, "pause")}>
-                        Pause
+                        暂停
                       </button>
                       <button className="btn small secondary" disabled={!["running", "paused"].includes(t.status)} onClick={() => control(t.id, "resume")}>
-                        Resume
+                        继续
                       </button>
                       <button className="btn small danger" disabled={!["running", "paused"].includes(t.status)} onClick={() => control(t.id, "stop")}>
-                        Stop
+                        停止
                       </button>
                     </div>
                   </td>

@@ -33,13 +33,13 @@ export function RunMonitor() {
 
   return (
     <div>
-      <h1 className="page-title">Run Monitor</h1>
-      <p className="page-sub">Live screenshot, detected state, progress, and worker actions.</p>
+      <h1 className="page-title">运行监控</h1>
+      <p className="page-sub">查看实时截图、识别状态、任务进度和执行动作。</p>
 
-      <Card title="Instance" style={{ marginBottom: 18 }}>
+      <Card title="模拟器实例" style={{ marginBottom: 18 }}>
         <div className="row">
           <select value={selected} onChange={(e) => setSelected(e.target.value)} style={{ maxWidth: 360 }}>
-            <option value="">— select —</option>
+            <option value="">— 请选择 —</option>
             {inst.data?.map((i) => (
               <option key={i.id} value={i.id}>
                 {i.name} ({i.adb_device_id})
@@ -48,36 +48,36 @@ export function RunMonitor() {
           </select>
           <label className="row">
             <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} />
-            Auto-refresh (4s)
+            自动刷新（4 秒）
           </label>
           <button
             className="btn small secondary"
             onClick={async () => selected && setShot(URL.createObjectURL(await api.raw(`/api/instances/${selected}/screenshot`)))}
           >
-            Capture now
+            立即截图
           </button>
         </div>
       </Card>
 
       {!current ? (
         <Card>
-          <Empty>Select an instance to monitor.</Empty>
+          <Empty>请选择要监控的模拟器实例。</Empty>
         </Card>
       ) : (
         <div className="grid" style={{ gridTemplateColumns: "2fr 1fr" }}>
-          <Card title="Screenshot">
-            {shot ? <img className="screenshot" src={shot} alt="live" /> : <Empty>No screenshot.</Empty>}
+          <Card title="截图">
+            {shot ? <img className="screenshot" src={shot} alt="实时截图" /> : <Empty>暂无截图。</Empty>}
           </Card>
-          <Card title="Status">
+          <Card title="状态">
             <div className="row" style={{ marginBottom: 16 }}>
-              <Stat value={<StatusBadge status={current.status} />} label="Instance" />
-              <Stat value={current.live_state ?? "—"} label="FGO state" />
+              <Stat value={<StatusBadge status={current.status} />} label="实例" />
+              <Stat value={current.live_state ?? "—"} label="FGO 状态" />
             </div>
             <div className="row" style={{ marginBottom: 16 }}>
-              <Stat value={current.live_completed ?? 0} label="Completed" />
-              <Stat value={current.live_failure ?? 0} label="Failures" />
+              <Stat value={current.live_completed ?? 0} label="已完成" />
+              <Stat value={current.live_failure ?? 0} label="失败次数" />
             </div>
-            <div className="muted">Last action</div>
+            <div className="muted">最近动作</div>
             <div>{current.live_action ?? "—"}</div>
           </Card>
         </div>

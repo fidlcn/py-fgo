@@ -14,6 +14,16 @@ const ACTION_TYPES = [
   "wait_seconds",
   "wait_state",
 ];
+const ACTION_LABELS: Record<string, string> = {
+  servant_skill: "从者技能",
+  master_skill: "御主技能",
+  noble_phantasm: "宝具",
+  select_enemy: "选择敌人",
+  order_change: "换人",
+  face_cards: "普通指令卡",
+  wait_seconds: "等待秒数",
+  wait_state: "等待状态",
+};
 const SLOTS = [1, 2, 3];
 const COLORS = ["Arts", "Buster", "Quick"];
 
@@ -33,7 +43,7 @@ export function BattlePlans() {
 
   async function createPlan() {
     const plan = await api.post<BattlePlan>("/api/battle-plans", {
-      name: "New plan",
+      name: "新战斗方案",
       waves: [{ wave: 1, turns: [{ turn: 1, actions: [], card_policy: { ...DEFAULT_POLICY } }] }],
     });
     list.reload();
@@ -71,23 +81,23 @@ export function BattlePlans() {
 
   return (
     <div>
-      <h1 className="page-title">Battle Plans</h1>
+      <h1 className="page-title">战斗方案</h1>
       <p className="page-sub">
-        Wave / turn / action timeline with a card policy. Use semantic fields (servant slot,
-        skill number) — never raw coordinates.
+        使用“波次 / 回合 / 动作时间线 + 选卡策略”配置战斗流程。这里只填写从者位、
+        技能编号等语义字段，不直接填写坐标。
       </p>
 
       <div className="grid" style={{ gridTemplateColumns: "300px 1fr" }}>
         <Card
-          title="Plans"
+          title="方案列表"
           actions={
             <button className="btn small" onClick={createPlan}>
-              + New
+              + 新建
             </button>
           }
         >
           {list.data && list.data.length === 0 ? (
-            <Empty>No plans yet.</Empty>
+            <Empty>还没有战斗方案。</Empty>
           ) : (
             <div className="grid">
               {list.data?.map((p) => (
@@ -118,7 +128,7 @@ export function BattlePlans() {
             }
             actions={
               <button className="btn small" disabled={!dirty || saving} onClick={save}>
-                {saving ? "Saving…" : "Save"}
+                {saving ? "保存中…" : "保存"}
               </button>
             }
           >
@@ -126,7 +136,7 @@ export function BattlePlans() {
           </Card>
         ) : (
           <Card>
-            <Empty>Select a plan or create a new one.</Empty>
+            <Empty>请选择一个方案，或新建方案。</Empty>
           </Card>
         )}
       </div>
@@ -150,7 +160,7 @@ function PlanEditor({
         <WaveBlock key={wi} wave={w} patch={(mut) => patch((p) => mut(p.waves[wi]))} />
       ))}
       <button className="btn small secondary" onClick={addWave}>
-        + Add wave
+        + 添加波次
       </button>
     </div>
   );
@@ -164,7 +174,7 @@ function WaveBlock({
   patch: (mut: (w: BattleWave) => void) => void;
 }) {
   return (
-    <Card title={`Wave ${wave.wave}`}>
+    <Card title={`第 ${wave.wave} 波`}>
       <div className="grid">
         {wave.turns.map((t, ti) => (
           <TurnBlock key={ti} turn={t} patch={(mut) => patch((w) => mut(w.turns[ti]))} />
@@ -177,7 +187,7 @@ function WaveBlock({
             )
           }
         >
-          + Add turn
+          + 添加回合
         </button>
       </div>
     </Card>
@@ -207,8 +217,8 @@ function TurnBlock({
   return (
     <div className="card" style={{ background: "var(--panel-2)" }}>
       <div className="spread" style={{ marginBottom: 10 }}>
-        <strong>Turn {turn.turn}</strong>
-        <span className="muted">{turn.actions.length} action(s)</span>
+        <strong>第 {turn.turn} 回合</strong>
+        <span className="muted">{turn.actions.length} 个动作</span>
       </div>
       <div className="grid">
         {turn.actions.map((a, ai) => (
@@ -217,9 +227,9 @@ function TurnBlock({
       </div>
       <div className="row" style={{ marginTop: 10 }}>
         <select defaultValue="" onChange={(e) => e.target.value && (addAction(e.target.value), (e.target.value = ""))}>
-          <option value="">+ Add action…</option>
+          <option value="">+ 添加动作…</option>
           {ACTION_TYPES.map((t) => (
-            <option key={t}>{t}</option>
+            <option key={t} value={t}>{ACTION_LABELS[t] ?? t}</option>
           ))}
         </select>
       </div>
@@ -246,48 +256,48 @@ function ActionRow({
   return (
     <div className="row spread">
       <div className="row">
-        <span className="badge">{action.type}</span>
+        <span className="badge">{ACTION_LABELS[action.type] ?? action.type}</span>
         {action.type === "servant_skill" && (
           <>
-            <span className="muted">servant</span>
+            <span className="muted">从者</span>
             {num("servant_slot")}
-            <span className="muted">skill</span>
+            <span className="muted">技能</span>
             {num("skill")}
-            <span className="muted">target</span>
+            <span className="muted">目标</span>
             {num("target_slot")}
           </>
         )}
         {action.type === "master_skill" && (
           <>
-            <span className="muted">skill</span>
+            <span className="muted">技能</span>
             {num("skill")}
-            <span className="muted">target</span>
+            <span className="muted">目标</span>
             {num("target_slot")}
           </>
         )}
         {action.type === "noble_phantasm" && (
           <>
-            <span className="muted">servant</span>
+            <span className="muted">从者</span>
             {num("servant_slot")}
           </>
         )}
         {action.type === "select_enemy" && (
           <>
-            <span className="muted">enemy</span>
+            <span className="muted">敌人</span>
             {num("target_slot")}
           </>
         )}
         {action.type === "order_change" && (
           <>
-            <span className="muted">reserve</span>
+            <span className="muted">后排</span>
             {num("reserve_slot")}
-            <span className="muted">active</span>
+            <span className="muted">前排</span>
             {num("active_slot")}
           </>
         )}
         {action.type === "wait_seconds" && (
           <>
-            <span className="muted">seconds</span>
+            <span className="muted">秒数</span>
             {num("seconds")}
           </>
         )}
@@ -315,10 +325,10 @@ function CardPolicyEditor({
   return (
     <div style={{ marginTop: 12, borderTop: "1px solid var(--border)", paddingTop: 10 }}>
       <div className="muted" style={{ marginBottom: 6 }}>
-        Card policy
+        选卡策略
       </div>
       <div className="row">
-        <Field label="NP order (servant slots)">
+        <Field label="宝具顺序（从者位）">
           <div className="row">
             {SLOTS.map((s) => (
               <label key={s} className="row">
@@ -332,7 +342,7 @@ function CardPolicyEditor({
             ))}
           </div>
         </Field>
-        <Field label="Face card count">
+        <Field label="补卡数量">
           <input
             type="number"
             value={policy.face_card_count ?? 0}
@@ -340,7 +350,7 @@ function CardPolicyEditor({
             style={{ width: 80 }}
           />
         </Field>
-        <Field label="Fallback positions">
+        <Field label="兜底卡位">
           <div className="row">
             {[1, 2, 3, 4, 5].map((s) => (
               <label key={s} className="row">
@@ -355,7 +365,7 @@ function CardPolicyEditor({
           </div>
         </Field>
       </div>
-      <Field label="Color priority (comma separated)">
+      <Field label="卡色优先级（逗号分隔）">
         <input
           value={(policy.color_priority ?? COLORS).join(", ")}
           onChange={(e) => patch((p) => (p.color_priority = e.target.value.split(",").map((s) => s.trim())))}

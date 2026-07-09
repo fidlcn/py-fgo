@@ -15,20 +15,20 @@ export function LogsPage() {
 
   return (
     <div>
-      <h1 className="page-title">Logs & Events</h1>
+      <h1 className="page-title">日志与事件</h1>
       <p className="page-sub">
-        Application log tail + live event stream.{" "}
-        {connected ? <span className="badge ok">● live</span> : <span className="badge muted">○ disconnected</span>}
+        应用日志尾部和实时事件流。{" "}
+        {connected ? <span className="badge ok">● 实时连接</span> : <span className="badge muted">○ 未连接</span>}
       </p>
 
       <div className="grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-        <Card title="Log file" actions={<button className="btn small secondary" onClick={reload}>Refresh</button>}>
-          <pre className="log">{data?.log?.length ? data.log.join("\n") : "(empty)"}</pre>
+        <Card title="日志文件" actions={<button className="btn small secondary" onClick={reload}>刷新</button>}>
+          <pre className="log">{data?.log?.length ? data.log.join("\n") : "（空）"}</pre>
         </Card>
-        <Card title="Recent events (live)">
+        <Card title="最近事件（实时）">
           <div className="event-log">
             {events.length === 0 ? (
-              <Empty>No events yet.</Empty>
+              <Empty>暂无事件。</Empty>
             ) : (
               events.map((e, idx) => (
                 <div className="line" key={idx}>
@@ -43,16 +43,16 @@ export function LogsPage() {
       </div>
 
       <div style={{ marginTop: 18 }}>
-        <Card title="Saved screenshots" actions={<button className="btn small secondary" onClick={shots.reload}>Refresh</button>}>
+        <Card title="已保存截图" actions={<button className="btn small secondary" onClick={shots.reload}>刷新</button>}>
           {shots.data && shots.data.length === 0 ? (
-            <Empty>No saved screenshots. Error screenshots are captured automatically on failure.</Empty>
+            <Empty>暂无保存截图。任务失败时会自动保存异常截图。</Empty>
           ) : (
             <table>
               <thead>
                 <tr>
-                  <th>File</th>
-                  <th>Type</th>
-                  <th>Size</th>
+                  <th>文件</th>
+                  <th>类型</th>
+                  <th>大小</th>
                 </tr>
               </thead>
               <tbody>
@@ -63,7 +63,7 @@ export function LogsPage() {
                         {s.name}
                       </a>
                     </td>
-                    <td>{s.is_error ? <span className="badge err">error</span> : <span className="badge muted">normal</span>}</td>
+                    <td>{s.is_error ? <span className="badge err">异常</span> : <span className="badge muted">普通</span>}</td>
                     <td className="muted">{(s.size / 1024).toFixed(1)} KB</td>
                   </tr>
                 ))}

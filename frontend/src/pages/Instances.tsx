@@ -29,7 +29,7 @@ export function Instances() {
   async function test(id: string) {
     try {
       const r = await api.post<{ online: boolean }>(`/api/instances/${id}/test`);
-      alert(r.online ? "Device is online ✓" : "Device offline ✗");
+      alert(r.online ? "设备在线 ✓" : "设备离线 ✗");
     } catch (e) {
       alert((e as Error).message);
     }
@@ -41,36 +41,36 @@ export function Instances() {
   }
 
   async function remove(id: string) {
-    if (!confirm("Delete this instance?")) return;
+    if (!confirm("确定删除这个模拟器实例吗？")) return;
     await api.del(`/api/instances/${id}`);
     list.reload();
   }
 
   return (
     <div>
-      <h1 className="page-title">Instances</h1>
-      <p className="page-sub">MuMu emulator instances controlled over ADB.</p>
+      <h1 className="page-title">模拟器</h1>
+      <p className="page-sub">通过 ADB 连接和管理 MuMu 模拟器实例。</p>
 
       <div className="grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-        <Card title="Add instance">
-          <Field label="Name">
+        <Card title="添加实例">
+          <Field label="名称">
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </Field>
-          <Field label="ADB device id (e.g. 127.0.0.1:7555)">
+          <Field label="ADB 设备 ID（例如 127.0.0.1:7555）">
             <input
               value={form.adb_device_id}
               onChange={(e) => setForm({ ...form, adb_device_id: e.target.value })}
             />
           </Field>
           <div className="row">
-            <Field label="Width">
+            <Field label="宽度">
               <input
                 type="number"
                 value={form.resolution_width}
                 onChange={(e) => setForm({ ...form, resolution_width: +e.target.value })}
               />
             </Field>
-            <Field label="Height">
+            <Field label="高度">
               <input
                 type="number"
                 value={form.resolution_height}
@@ -79,25 +79,25 @@ export function Instances() {
             </Field>
           </div>
           <button className="btn" disabled={busy || !form.name || !form.adb_device_id} onClick={add}>
-            Add
+            添加
           </button>
         </Card>
 
         <Card
-          title="ADB scan"
+          title="ADB 扫描"
           actions={
             <button
               className="btn small secondary"
               onClick={async () => setScan(await fetchScan())}
             >
-              Scan devices
+              扫描设备
             </button>
           }
         >
           {scan === null ? (
-            <Empty>Click “Scan devices” to run `adb devices`.</Empty>
+            <Empty>点击“扫描设备”执行 `adb devices`。</Empty>
           ) : scan.length === 0 ? (
-            <Empty>No devices found (is adb on PATH / emulator running?).</Empty>
+            <Empty>未发现设备，请确认 ADB 在 PATH 中且模拟器已启动。</Empty>
           ) : (
             <table>
               <tbody>
@@ -112,7 +112,7 @@ export function Instances() {
                         className="btn small secondary"
                         onClick={() => setForm({ ...form, adb_device_id: d.device_id })}
                       >
-                        Use
+                        使用
                       </button>
                     </td>
                   </tr>
@@ -124,17 +124,17 @@ export function Instances() {
       </div>
 
       <div style={{ marginTop: 18 }}>
-        <Card title="Instances">
+        <Card title="实例列表">
           {list.data && list.data.length === 0 ? (
-            <Empty>No instances yet.</Empty>
+            <Empty>还没有模拟器实例。</Empty>
           ) : (
             <table>
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Device</th>
-                  <th>Resolution</th>
-                  <th>Status</th>
+                  <th>名称</th>
+                  <th>设备</th>
+                  <th>分辨率</th>
+                  <th>状态</th>
                   <th></th>
                 </tr>
               </thead>
@@ -152,13 +152,13 @@ export function Instances() {
                     <td>
                       <div className="row">
                         <button className="btn small secondary" onClick={() => test(i.id)}>
-                          Test
+                          测试
                         </button>
                         <button className="btn small secondary" onClick={() => screenshot(i.id)}>
-                          Screenshot
+                          截图
                         </button>
                         <button className="btn small danger" onClick={() => remove(i.id)}>
-                          Delete
+                          删除
                         </button>
                       </div>
                     </td>
@@ -172,8 +172,8 @@ export function Instances() {
 
       {shot && (
         <div style={{ marginTop: 18 }}>
-          <Card title="Screenshot" actions={<button className="btn small secondary" onClick={() => setShot(null)}>Close</button>}>
-            <img className="screenshot" src={shot} alt="screenshot" />
+          <Card title="截图" actions={<button className="btn small secondary" onClick={() => setShot(null)}>关闭</button>}>
+            <img className="screenshot" src={shot} alt="截图" />
           </Card>
         </div>
       )}

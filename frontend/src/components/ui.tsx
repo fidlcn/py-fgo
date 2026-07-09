@@ -4,7 +4,28 @@ import type { CSSProperties, ReactNode } from "react";
 
 export function StatusBadge({ status }: { status: string }) {
   const cls = statusClass(status);
-  return <span className={`badge ${cls}`}>{status}</span>;
+  return <span className={`badge ${cls}`}>{statusLabel(status)}</span>;
+}
+
+export function statusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    running: "运行中",
+    online: "在线",
+    completed: "已完成",
+    ok: "正常",
+    device: "已连接",
+    paused: "已暂停",
+    stopping: "停止中",
+    pending: "等待中",
+    idle: "空闲",
+    offline: "离线",
+    unauthorized: "未授权",
+    failed: "失败",
+    error: "异常",
+    stopped: "已停止",
+    "no task": "无任务",
+  };
+  return labels[status.toLowerCase()] ?? status;
 }
 
 export function statusClass(status: string): string {

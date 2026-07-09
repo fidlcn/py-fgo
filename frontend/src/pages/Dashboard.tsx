@@ -59,34 +59,33 @@ export function Dashboard() {
 
   return (
     <div>
-      <h1 className="page-title">Dashboard</h1>
+      <h1 className="page-title">首页</h1>
       <p className="page-sub">
-        Live overview of emulator instances and running tasks.{" "}
+        查看模拟器实例和正在运行的任务。{" "}
         {connected ? (
-          <span className="badge ok">● live</span>
+          <span className="badge ok">● 实时连接</span>
         ) : (
-          <span className="badge muted">○ disconnected</span>
+          <span className="badge muted">○ 未连接</span>
         )}
       </p>
 
       <Card
-        title="One-click start"
+        title="一键启动"
         actions={
           <button className="btn primary large" disabled={quickBusy} onClick={quickStart}>
-            {quickBusy ? "Checking…" : "Start"}
+            {quickBusy ? "检测中…" : "启动"}
           </button>
         }
       >
         <div className="quick-start-body">
           <div>
-            Open MuMu, launch FGO, enter the quest detail screen, then press Start.
-            The app will detect the running emulator, verify FGO is in front, create
-            default profiles if needed, and start the task.
+            先打开 MuMu 和 FGO，并停在关卡详情页。点击启动后，软件会自动检测模拟器、
+            确认 FGO 位于前台，必要时创建默认配置，然后开始执行任务。
           </div>
           {quickError && <div className="badge err">{quickError}</div>}
           {quickResult && (
             <div className="badge ok">
-              Started {quickResult.task.id} on {quickResult.preflight.instance.name}
+              已启动任务 {quickResult.task.id}，实例：{quickResult.preflight.instance.name}
               {" · "}
               {quickResult.preflight.state}
             </div>
@@ -94,7 +93,7 @@ export function Dashboard() {
         </div>
       </Card>
 
-      {inst.loading && <p className="muted">Loading…</p>}
+      {inst.loading && <p className="muted">加载中…</p>}
       {inst.error && <p className="badge err">{inst.error}</p>}
 
       <div className="grid">
@@ -121,48 +120,48 @@ export function Dashboard() {
                     disabled={!task || task.status === "running"}
                     onClick={() => control(task?.id, "start")}
                   >
-                    Start
+                    启动
                   </button>
                   <button
                     className="btn small secondary"
                     disabled={task?.status !== "running"}
                     onClick={() => control(task?.id, "pause")}
                   >
-                    Pause
+                    暂停
                   </button>
                   <button
                     className="btn small secondary"
                     disabled={!["running", "paused"].includes(task?.status ?? "")}
                     onClick={() => control(task?.id, "resume")}
                   >
-                    Resume
+                    继续
                   </button>
                   <button
                     className="btn small danger"
                     disabled={!["running", "paused"].includes(task?.status ?? "")}
                     onClick={() => control(task?.id, "stop")}
                   >
-                    Stop
+                    停止
                   </button>
                 </div>
               }
             >
               <div className="row" style={{ marginBottom: 12 }}>
-                <Stat value={state} label="FGO state" />
-                <Stat value={completed} label="Completed" />
-                <Stat value={task?.failure_count ?? 0} label="Failures" />
+                <Stat value={state} label="FGO 状态" />
+                <Stat value={completed} label="已完成" />
+                <Stat value={task?.failure_count ?? 0} label="失败次数" />
                 <Stat
                   value={<StatusBadge status={task?.status ?? "no task"} />}
-                  label="Task"
+                  label="任务"
                 />
               </div>
               <div className="muted" style={{ marginBottom: 8 }}>
-                Last action: {action || "—"}
+                最近动作：{action || "—"}
               </div>
               {task ? (
-                <Link to="/monitor">Open monitor →</Link>
+                <Link to="/monitor">打开监控 →</Link>
               ) : (
-                <Link to="/tasks">Create a task →</Link>
+                <Link to="/tasks">创建任务 →</Link>
               )}
             </Card>
           );
@@ -170,7 +169,7 @@ export function Dashboard() {
         {inst.data && inst.data.length === 0 && (
           <Card>
             <Empty>
-              No instances yet. <Link to="/instances">Add a MuMu instance →</Link>
+              还没有模拟器实例。<Link to="/instances">添加 MuMu 实例 →</Link>
             </Empty>
           </Card>
         )}
