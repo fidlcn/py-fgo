@@ -41,6 +41,11 @@ def get_task(task_id: str, tasks: TaskManager = Depends(get_task_manager)):
     return response.ok(tasks.get_task(task_id))
 
 
+@router.delete("/{task_id}")
+def delete_task(task_id: str, tasks: TaskManager = Depends(get_task_manager)):
+    return response.ok(tasks.delete(task_id))
+
+
 @router.post("/{task_id}/start")
 def start_task(task_id: str, tasks: TaskManager = Depends(get_task_manager)):
     return response.ok(tasks.start(task_id))

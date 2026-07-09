@@ -56,6 +56,18 @@ export function Tasks() {
     }
   }
 
+  async function remove(id: string) {
+    if (!window.confirm("确定删除这个任务吗？")) return;
+    setControlError(null);
+    try {
+      await api.del(`/api/tasks/${id}`);
+      tasks.reload();
+    } catch (e) {
+      setControlError(e instanceof Error ? e.message : String(e));
+      tasks.reload();
+    }
+  }
+
   return (
     <div>
       <h1 className="page-title">任务</h1>
@@ -172,7 +184,7 @@ export function Tasks() {
             </thead>
             <tbody>
               {tasks.data?.map((t) => (
-                <TaskRow key={t.id} task={t} control={control} />
+                <TaskRow key={t.id} task={t} control={control} remove={remove} />
               ))}
             </tbody>
           </table>
@@ -185,15 +197,18 @@ export function Tasks() {
 function TaskRow({
   task,
   control,
+  remove,
 }: {
   task: RunTask;
   control: (id: string, action: TaskAction) => void;
+  remove: (id: string) => void;
 }) {
   const canStart = ["pending", "paused", "stopped", "failed", "completed"].includes(task.status);
   const canPause = task.status === "running";
   const canResume = task.status === "paused";
   const canStop = ["running", "paused"].includes(task.status);
   const canReset = task.status === "stopping";
+  const canDelete = !["running", "paused", "stopping"].includes(task.status);
 
   return (
     <tr>
@@ -222,6 +237,9 @@ function TaskRow({
           </button>
           <button className="btn small secondary" disabled={!canReset} onClick={() => control(task.id, "reset")}>
             重置
+          </button>
+          <button className="btn small danger" disabled={!canDelete} onClick={() => remove(task.id)}>
+            删除
           </button>
         </div>
       </td>

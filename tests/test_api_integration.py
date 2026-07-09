@@ -82,6 +82,25 @@ def test_create_task_without_starting_worker(app_client):
     assert app_client.get("/api/tasks").json()["data"][0]["id"] == task["id"]
 
 
+def test_delete_task(app_client):
+    inst, qp, sp, bp = _seed(app_client)
+    task = app_client.post(
+        "/api/tasks",
+        json={
+            "instance_id": inst["id"],
+            "quest_profile_id": qp["id"],
+            "support_profile_id": sp["id"],
+            "battle_plan_id": bp["id"],
+        },
+    ).json()["data"]
+
+    deleted = app_client.delete(f"/api/tasks/{task['id']}")
+
+    assert deleted.status_code == 200
+    assert deleted.json()["data"]["deleted"] == task["id"]
+    assert app_client.get("/api/tasks").json()["data"] == []
+
+
 def test_websocket_event_format(app_client):
     # Publish an event before connecting so it's in recent history.
     app_client.app.state.bus.publish("task_status", task_id="t1", status="running")

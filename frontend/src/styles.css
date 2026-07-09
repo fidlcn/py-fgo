@@ -299,6 +299,101 @@ textarea:focus {
   border: 1px solid var(--border);
 }
 
+.flow-list {
+  display: grid;
+  gap: 0;
+  margin-top: 4px;
+}
+
+.flow-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 10px;
+  min-height: 48px;
+}
+
+.flow-node:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 30px;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+
+.flow-dot {
+  position: relative;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.flow-text {
+  min-width: 0;
+  padding: 3px 8px 10px;
+  border-radius: 8px;
+}
+
+.flow-text > div {
+  font-weight: 600;
+}
+
+.flow-text span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.flow-node.done .flow-dot {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.flow-node.done:not(:last-child)::after {
+  background: var(--ok);
+}
+
+.flow-node.current .flow-dot {
+  border-color: var(--accent);
+  background: rgba(91, 140, 255, 0.16);
+  color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(91, 140, 255, 0.12);
+}
+
+.flow-node.current .flow-text {
+  background: rgba(91, 140, 255, 0.1);
+}
+
+.flow-node.current .flow-text span {
+  color: var(--accent);
+}
+
+.flow-node.error .flow-dot {
+  border-color: var(--err);
+  background: rgba(248, 81, 73, 0.14);
+  color: var(--err);
+  box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.12);
+}
+
+.flow-node.error .flow-text {
+  background: rgba(248, 81, 73, 0.1);
+}
+
+.flow-node.error .flow-text span {
+  color: var(--err);
+}
+
 .event-log {
   max-height: 320px;
   overflow: auto;

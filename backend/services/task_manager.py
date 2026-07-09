@@ -97,6 +97,24 @@ class TaskManager:
         finally:
             s.close()
 
+    def delete(self, task_id: str) -> dict[str, str]:
+        db = self._db_factory()
+        s = db.session()
+        try:
+            task = r.get_task(s, task_id)
+            if self.workers.is_running(task.instance_id) or task.status in (
+                "running",
+                "paused",
+                "stopping",
+            ):
+                raise ConflictError("cannot delete a running, paused, or stopping task")
+            r.delete_task(s, task_id)
+            s.commit()
+        finally:
+            s.close()
+        bus.publish(TASK_STATUS, task_id=task_id, status="deleted")
+        return {"deleted": task_id}
+
     # --- lifecycle ------------------------------------------------------
 
     def start(self, task_id: str) -> dict[str, Any]:

@@ -271,3 +271,9 @@ def update_task(db: Session, task_id: str, data: dict[str, Any]) -> RunTask:
             setattr(task, key, data[key])
     db.flush()
     return task
+
+
+def delete_task(db: Session, task_id: str) -> None:
+    task = get_task(db, task_id)
+    db.delete(task)
+    db.flush()
