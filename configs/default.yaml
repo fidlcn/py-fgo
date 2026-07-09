@@ -1,0 +1,37 @@
+# FGO Bot default configuration (spec section 12).
+# Values here overlay the built-in defaults in backend/core/config.py.
+
+server:
+  host: "127.0.0.1"
+  port: 8765
+  lan_enabled: false
+  auth:
+    enabled: true
+    token: "change-me"
+
+adb:
+  path: "adb"
+  command_timeout_seconds: 10
+
+runtime:
+  base_resolution: [1280, 720]
+  screenshot_interval_ms: 700
+  action_delay_ms: 350
+  max_instances: 4
+  save_normal_screenshots: false
+  keep_recent_screenshots: 20
+
+vision:
+  template_threshold: 0.82
+  state_threshold: 0.85
+  use_ocr: false
+
+logging:
+  level: "INFO"
+  screenshot_on_error: true
+
+fgo:
+  package_names:
+    - "com.bilibili.fatego"
+    - "com.aniplex.fategrandorder"
+    - "com.aniplex.fategrandorder.en"

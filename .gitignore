@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Data & logs (runtime generated)
+data/*.db
+data/*.db-journal
+logs/*
+!logs/.gitkeep
+logs/screenshots/*
+!logs/screenshots/.gitkeep
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+__pycache__/
+*.pyc
+*.pyc
+dist/
+.cursor/
+.codegraph/
+plan/
+doc/

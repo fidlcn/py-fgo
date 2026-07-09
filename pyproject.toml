@@ -1,0 +1,18 @@
+[project]
+name = "py-fgo"
+version = "0.1.0"
+description = "FGO MuMu Windows automation tool (ADB + OpenCV + FastAPI + React)"
+requires-python = ">=3.9"
+readme = "README.md"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
