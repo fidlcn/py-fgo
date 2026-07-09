@@ -3,6 +3,16 @@ import { useAsync, fetchInstances } from "../api/hooks";
 import { api } from "../api/client";
 import { Card, Empty, Stat, StatusBadge } from "../components/ui";
 
+const FLOW_NODES = [
+  { id: "quest_entry", title: "关卡入口" },
+  { id: "support_select", title: "助战选择" },
+  { id: "party_confirm", title: "队伍确认" },
+  { id: "battle", title: "战斗执行" },
+  { id: "result", title: "结算处理" },
+  { id: "ap_recovery", title: "AP 恢复" },
+  { id: "loop_complete", title: "回到入口" },
+];
+
 export function RunMonitor() {
   const inst = useAsync(fetchInstances, []);
   const [selected, setSelected] = useState<string>("");
@@ -41,6 +51,7 @@ export function RunMonitor() {
   }, [selected, auto]);
 
   const current = inst.data?.find((i) => i.id === selected);
+  const flow = current ? buildFlow(current.live_phase, current.live_phase_error) : null;
 
   return (
     <div>
@@ -98,6 +109,7 @@ export function RunMonitor() {
             <div className="row" style={{ marginBottom: 16 }}>
               <Stat value={<StatusBadge status={current.status} />} label="实例" />
               <Stat value={current.live_state ?? "—"} label="FGO 状态" />
+              <Stat value={current.live_phase_label ?? "—"} label="流程阶段" />
             </div>
             <div className="row" style={{ marginBottom: 16 }}>
               <Stat value={current.live_completed ?? 0} label="已完成" />
@@ -105,9 +117,61 @@ export function RunMonitor() {
             </div>
             <div className="muted">最近动作</div>
             <div>{current.live_action ?? "—"}</div>
+            <div style={{ marginTop: 16 }}>
+              <div className="muted" style={{ marginBottom: 8 }}>
+                流程节点
+              </div>
+              {flow && <FlowView flow={flow} />}
+              {current.live_phase_error && (
+                <div className="badge err" style={{ marginTop: 12 }}>
+                  阶段错误：{current.live_phase_error}
+                </div>
+              )}
+            </div>
           </Card>
         </div>
       )}
     </div>
   );
+}
+
+function buildFlow(phase: string | undefined, phaseError: string | null | undefined) {
+  const currentIndex = Math.max(0, FLOW_NODES.findIndex((node) => node.id === phase));
+  return FLOW_NODES.map((node, index) => {
+    let status: "done" | "current" | "wait" | "error" = "wait";
+    if (phaseError && index === currentIndex) status = "error";
+    else if (index < currentIndex) status = "done";
+    else if (index === currentIndex) status = "current";
+    return { ...node, status };
+  });
+}
+
+function FlowView({
+  flow,
+}: {
+  flow: Array<(typeof FLOW_NODES)[number] & { status: "done" | "current" | "wait" | "error" }>;
+}) {
+  return (
+    <div className="flow-list">
+      {flow.map((node, index) => (
+        <div key={node.id} className={`flow-node ${node.status}`}>
+          <div className="flow-dot">{index + 1}</div>
+          <div className="flow-text">
+            <div>{node.title}</div>
+            <span>{flowStatusLabel(node.status)}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function flowStatusLabel(status: "done" | "current" | "wait" | "error") {
+  const labels = {
+    done: "已通过",
+    current: "当前节点",
+    wait: "等待",
+    error: "报错位置",
+  };
+  return labels[status];
 }

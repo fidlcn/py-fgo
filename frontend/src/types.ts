@@ -21,6 +21,9 @@ export interface Instance {
   updated_at: string;
   // Live overlay (only when a worker is running).
   live_state?: string;
+  live_phase?: string;
+  live_phase_label?: string;
+  live_phase_error?: string | null;
   live_completed?: number;
   live_failure?: number;
   live_action?: string;

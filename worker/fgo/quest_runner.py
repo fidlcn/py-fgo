@@ -77,12 +77,14 @@ class QuestRunner:
                 self.run_quest()
                 self.ctx.completed_count += 1
                 self.ctx.last_error = None
+                self.ctx.set_phase("loop_complete")
                 self.ctx.publish_status(event="quest_completed")
             except TaskStoppedError:
                 raise
             except APInsufficientError as exc:
                 # Recovery exhausted or disabled: stop the task.
                 self.ctx.last_error = str(exc)
+                self.ctx.set_phase_error(self.ctx.last_error)
                 self._save_error_screenshot(exc)
                 raise
             except (SupportNotFoundError, BattlePlanError) as exc:
@@ -101,19 +103,24 @@ class QuestRunner:
         """Run exactly one quest: enter -> support -> party -> battle -> result."""
         state, _ = sm.sense(self.ctx)
         if state == FgoState.PARTY_CONFIRM:
+            self.ctx.set_phase("party_confirm")
             self.ctx.record_action("start from party confirm")
         else:
             if state != FgoState.SUPPORT_SELECT:
                 self._enter_quest()
+            self.ctx.set_phase("support_select")
             self.support.select(self.support_profile)
         self._confirm_party()
+        self.ctx.set_phase("battle")
         self.battle.run_plan(self.battle_plan)
+        self.ctx.set_phase("result")
         self._finish_result()
 
     # --- phases ---------------------------------------------------------
 
     def _enter_quest(self) -> None:
         ctx = self.ctx
+        ctx.set_phase("quest_entry")
         state, _ = sm.sense(ctx)
         if state in (FgoState.SUPPORT_SELECT, FgoState.PARTY_CONFIRM):
             return
@@ -125,6 +132,7 @@ class QuestRunner:
 
     def _confirm_party(self) -> None:
         ctx = self.ctx
+        ctx.set_phase("party_confirm")
         state, _ = sm.sense(ctx)
         if state != FgoState.PARTY_CONFIRM:
             sm.wait_state(ctx, FgoState.PARTY_CONFIRM, timeout=10.0)
@@ -144,6 +152,7 @@ class QuestRunner:
                 ctx.record_action("back to quest entry; ready to repeat")
                 return
             if state == FgoState.AP_INSUFFICIENT:
+                ctx.set_phase("ap_recovery")
                 if self.recovery.handle_ap_insufficient(self.ap_recovery):
                     return  # AP recovered; outer loop will re-enter the quest
                 return
@@ -174,6 +183,7 @@ class QuestRunner:
         """Record a failure. Returns True if the loop should abort."""
         self.ctx.failure_count += 1
         self.ctx.last_error = f"{type(exc).__name__}: {exc}"
+        self.ctx.set_phase_error(self.ctx.last_error)
         self._save_error_screenshot(exc)
         log.warning(
             "quest failed (%d/%d): %s",

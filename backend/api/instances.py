@@ -17,6 +17,7 @@ from .deps import db_session, get_event_bus, get_instance_manager, get_worker_ma
 from backend.core.events import EventBus
 from backend.services.instance_manager import InstanceManager
 from backend.services.worker_manager import WorkerManager
+from worker.runtime import PHASE_LABELS
 
 router = APIRouter(prefix="/api/instances", tags=["instances"])
 
@@ -49,6 +50,9 @@ def list_instances(
         ctx = workers.get_context(item["id"])
         if ctx is not None:
             item["live_state"] = ctx.current_state.value
+            item["live_phase"] = ctx.current_phase
+            item["live_phase_label"] = PHASE_LABELS.get(ctx.current_phase, ctx.current_phase)
+            item["live_phase_error"] = ctx.phase_error
             item["live_completed"] = ctx.completed_count
             item["live_failure"] = ctx.failure_count
             item["live_action"] = ctx.last_action

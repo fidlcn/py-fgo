@@ -30,6 +30,18 @@ log = get_logger("worker.runtime")
 # A status sink receives a dict payload (mirrors the instance_status event).
 StatusSink = Callable[[dict[str, Any]], None]
 
+PHASE_LABELS: dict[str, str] = {
+    "idle": "空闲",
+    "quest_entry": "关卡入口",
+    "support_select": "助战选择",
+    "party_confirm": "队伍确认",
+    "battle": "战斗执行",
+    "result": "结算处理",
+    "ap_recovery": "AP 恢复",
+    "loop_complete": "回到入口",
+    "failed": "任务失败",
+}
+
 
 def _noop_sink(_payload: dict[str, Any]) -> None:
     pass
@@ -92,6 +104,8 @@ class WorkerContext:
     task_id: Optional[str] = None
     current_state: FgoState = FgoState.UNKNOWN
     last_action: str = ""
+    current_phase: str = "idle"
+    phase_error: Optional[str] = None
     completed_count: int = 0
     failure_count: int = 0
     last_error: Optional[str] = None
@@ -104,11 +118,24 @@ class WorkerContext:
         self.last_action = description
         log.debug("[%s] %s", self.instance_id, description)
 
+    def set_phase(self, phase: str, *, clear_error: bool = True) -> None:
+        self.current_phase = phase
+        if clear_error:
+            self.phase_error = None
+        self.publish_status()
+
+    def set_phase_error(self, error: str) -> None:
+        self.phase_error = error
+        self.publish_status()
+
     def publish_status(self, **extra: Any) -> None:
         payload: dict[str, Any] = {
             "instance_id": self.instance_id,
             "task_id": self.task_id,
             "state": self.current_state.value,
+            "phase": self.current_phase,
+            "phase_label": PHASE_LABELS.get(self.current_phase, self.current_phase),
+            "phase_error": self.phase_error,
             "completed_count": self.completed_count,
             "failure_count": self.failure_count,
             "last_action": self.last_action,
