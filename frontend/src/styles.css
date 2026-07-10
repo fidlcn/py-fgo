@@ -117,6 +117,10 @@ a {
   gap: 14px;
 }
 
+.logs-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .row {
   display: flex;
   gap: 10px;
@@ -406,6 +410,7 @@ textarea:focus {
   border-bottom: 1px solid var(--border);
   display: flex;
   gap: 8px;
+  min-width: 0;
 }
 .event-log .ts {
   color: var(--muted);
@@ -414,6 +419,11 @@ textarea:focus {
 .event-log .type {
   color: var(--accent);
   min-width: 120px;
+}
+.event-log .payload {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 pre.log {
@@ -424,4 +434,12 @@ pre.log {
   overflow: auto;
   max-height: 420px;
   font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+  .logs-grid {
+    grid-template-columns: 1fr;
+  }
 }

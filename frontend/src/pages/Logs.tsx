@@ -21,7 +21,7 @@ export function LogsPage() {
         {connected ? <span className="badge ok">● 实时连接</span> : <span className="badge muted">○ 未连接</span>}
       </p>
 
-      <div className="grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+      <div className="grid logs-grid">
         <Card title="日志文件" actions={<button className="btn small secondary" onClick={reload}>刷新</button>}>
           <pre className="log">{data?.log?.length ? data.log.join("\n") : "（空）"}</pre>
         </Card>
@@ -34,7 +34,7 @@ export function LogsPage() {
                 <div className="line" key={idx}>
                   <span className="ts">{new Date(e.timestamp).toLocaleTimeString()}</span>
                   <span className="type">{e.type}</span>
-                  <span>{JSON.stringify(e.payload)}</span>
+                  <span className="payload">{JSON.stringify(e.payload)}</span>
                 </div>
               ))
             )}

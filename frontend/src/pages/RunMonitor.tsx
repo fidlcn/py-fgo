@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAsync, fetchInstances } from "../api/hooks";
 import { api } from "../api/client";
 import { Card, Empty, Stat, StatusBadge } from "../components/ui";
+import { usePersistentState } from "../hooks/usePersistentState";
 
 const FLOW_NODES = [
   { id: "quest_entry", title: "关卡入口" },
@@ -15,9 +16,13 @@ const FLOW_NODES = [
 
 export function RunMonitor() {
   const inst = useAsync(fetchInstances, []);
-  const [selected, setSelected] = useState<string>("");
+  const [selected, setSelected] = usePersistentState("py-fgo.monitor.selected-instance", "");
   const [shot, setShot] = useState<string | null>(null);
-  const [auto, setAuto] = useState(true);
+  const [auto, setAuto] = usePersistentState("py-fgo.monitor.auto-refresh", true);
+  const [phaseCache, setPhaseCache] = usePersistentState<Record<string, string>>(
+    "py-fgo.monitor.phase-cache",
+    {}
+  );
   const [shotError, setShotError] = useState<string | null>(null);
   const timer = useRef<number | null>(null);
   const failures = useRef(0);
@@ -51,7 +56,13 @@ export function RunMonitor() {
   }, [selected, auto]);
 
   const current = inst.data?.find((i) => i.id === selected);
-  const flow = current ? buildFlow(current.live_phase, current.live_phase_error) : null;
+  useEffect(() => {
+    if (!selected || !current?.live_phase) return;
+    setPhaseCache({ ...phaseCache, [selected]: current.live_phase });
+  }, [selected, current?.live_phase]);
+  const displayPhase = current?.live_phase ?? phaseCache[selected];
+  const displayPhaseLabel = current?.live_phase_label ?? labelForPhase(displayPhase);
+  const flow = current ? buildFlow(displayPhase, current.live_phase_error) : null;
 
   return (
     <div>
@@ -109,7 +120,7 @@ export function RunMonitor() {
             <div className="row" style={{ marginBottom: 16 }}>
               <Stat value={<StatusBadge status={current.status} />} label="实例" />
               <Stat value={current.live_state ?? "—"} label="FGO 状态" />
-              <Stat value={current.live_phase_label ?? "—"} label="流程阶段" />
+              <Stat value={displayPhaseLabel ?? "—"} label="流程阶段" />
             </div>
             <div className="row" style={{ marginBottom: 16 }}>
               <Stat value={current.live_completed ?? 0} label="已完成" />
@@ -148,6 +159,10 @@ function buildFlow(phase: string | undefined, phaseError: string | null | undefi
     else if (index === currentIndex) status = "current";
     return { ...node, status };
   });
+}
+
+function labelForPhase(phase: string | undefined) {
+  return FLOW_NODES.find((node) => node.id === phase)?.title;
 }
 
 function FlowView({

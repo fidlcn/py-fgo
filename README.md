@@ -234,10 +234,42 @@ assets/templates/<group>/<name>.png
 ```text
 assets/templates/battle/attack_button.png
 assets/templates/support/select_title.png
-assets/templates/quest/start_button.png
+assets/templates/quest/detail_start_quest.png
 ```
 
 当前模板图片还没有内置，需要从 MuMu 中按固定分辨率截取。当前基准分辨率是 `1280x720`。
+
+模板必须使用页面中稳定、唯一的小区域，避免截取会变化的昵称、AP 数值、活动倒计时、好友名、礼装等级等内容。
+
+必需模板：
+
+```text
+assets/templates/support/select_title.png          助战选择页标题或稳定标识
+assets/templates/party/confirm_start.png           队伍确认页的“开始任务”按钮
+assets/templates/battle/attack_button.png          战斗指令页的 Attack/攻击按钮
+assets/templates/battle/card_select_title.png      选卡页稳定标题或卡牌选择标识
+assets/templates/battle/result_next.png            结算页“下一步/关闭/继续”类按钮
+```
+
+自动导航关卡时额外需要：
+
+```text
+assets/templates/quest/detail_start_quest.png      关卡入口/关卡确认页的开始入口按钮
+assets/templates/quest/list_title.png              关卡列表页标题或稳定标识
+```
+
+建议补充模板：
+
+```text
+assets/templates/battle/bond_result.png            羁绊结算页
+assets/templates/battle/drop_result.png            掉落结算页
+assets/templates/battle/friend_request.png         好友申请页
+assets/templates/recovery/ap_insufficient_title.png AP 不足弹窗
+assets/templates/common/network_error.png          网络错误弹窗
+assets/templates/common/app_crashed.png            应用崩溃/异常提示
+assets/templates/common/home_menu.png              游戏首页标识
+assets/templates/battle/loading.png                战斗加载中标识
+```
 
 如果模板缺失，状态识别可能返回 `UNKNOWN`。一键启动会安全失败并提示 `UNSUPPORTED_START_STATE`，不会盲目点击。
 

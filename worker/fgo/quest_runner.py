@@ -1,10 +1,11 @@
 """QuestRunner: drives a full quest and loops it (spec section 5 / MVP 1).
 
-Single-instance, starts from the current quest-detail screen. Each iteration:
-enter -> support -> party confirm -> battle -> result/AP handling. Repeats per
-``loop_config`` (count mode). Failures increment ``failure_count``; on
-``stop_on_failure`` + ``max_failures`` the loop aborts. Every failure saves an
-error screenshot (spec 13/17).
+Single-instance, template-driven flow. Current-quest mode starts from the
+support-selection screen; auto-navigation mode starts from the quest entry
+screen. Each iteration: support -> party confirm -> battle -> result/AP
+handling. Repeats per ``loop_config`` (count mode). Failures increment
+``failure_count``; on ``stop_on_failure`` + ``max_failures`` the loop aborts.
+Every failure saves an error screenshot (spec 13/17).
 """
 
 from __future__ import annotations
@@ -112,7 +113,7 @@ class QuestRunner:
             if entry_mode == "current_quest":
                 self.ctx.set_phase(
                     "support_select",
-                    detail="当前关卡模式：从助战选择页开始，不等待关卡入口",
+                    detail="当前关卡模式：等待助战选择状态 SUPPORT_SELECT",
                 )
             elif state != FgoState.SUPPORT_SELECT:
                 self._enter_quest()
