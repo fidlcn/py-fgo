@@ -24,6 +24,11 @@ def list_points(service: CalibrationService = Depends(get_calibration_service)):
     return response.ok(service.list_points())
 
 
+@router.get("/export")
+def export_points(service: CalibrationService = Depends(get_calibration_service)):
+    return response.ok(service.export_points())
+
+
 @router.post("")
 def set_point(data: PointIn, service: CalibrationService = Depends(get_calibration_service)):
     return response.ok(service.set_point(data.key, data.x, data.y))

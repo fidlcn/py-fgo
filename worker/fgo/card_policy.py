@@ -1,13 +1,10 @@
 """Card selection policy (spec section 8.4).
 
 Priority when choosing face cards:
-1. If card color + servant are recognized -> order by ``color_priority`` then
-   ``servant_priority``.
-2. If only color is recognized -> order by ``color_priority``.
-3. If recognition fails -> use ``fallback_positions``.
-
-MVP relies on rule 3 because card-color detection is not yet calibrated
-(:meth:`VisionDetector.find_all_cards` returns ``[]``).
+1. Recognized cards are ordered by ``color_priority`` then ``servant_priority``.
+2. If recognition does not yield enough cards, callers should fail the action.
+   ``fallback_positions`` remains a stored configuration field for future
+   explicit fallback modes, but it is no longer used silently.
 """
 
 from __future__ import annotations
@@ -60,17 +57,8 @@ class CardPolicy:
         need = max(0, self.face_card_count)
         if need == 0:
             return []
-        if not cards:
-            return list(self.fallback_positions)[:need]
         ranked = sorted(
             cards,
             key=lambda c: (self.color_rank(c.color), self.servant_rank(c.servant_slot)),
         )
-        positions = [c.position for c in ranked]
-        # Pad with fallback if recognition yielded too few usable cards.
-        for pos in self.fallback_positions:
-            if len(positions) >= need:
-                break
-            if pos not in positions:
-                positions.append(pos)
-        return positions[:need]
+        return [c.position for c in ranked[:need]]

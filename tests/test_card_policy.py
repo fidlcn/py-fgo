@@ -13,14 +13,19 @@ def test_from_dict_defaults():
     assert p.fallback_positions == [1, 2, 3]
 
 
-def test_select_face_cards_uses_fallback_when_no_detections():
+def test_select_face_cards_returns_empty_when_no_detections():
     p = CardPolicy(face_card_count=3, fallback_positions=[1, 2, 3, 4, 5])
-    assert p.select_face_cards([]) == [1, 2, 3]
+    assert p.select_face_cards([]) == []
 
 
 def test_select_face_cards_respects_count():
     p = CardPolicy(face_card_count=2, fallback_positions=[1, 2, 3])
-    assert p.select_face_cards([]) == [1, 2]
+    cards = [
+        CardDetection(position=1, color="Arts", servant_slot=1),
+        CardDetection(position=2, color="Buster", servant_slot=2),
+        CardDetection(position=3, color="Quick", servant_slot=3),
+    ]
+    assert p.select_face_cards(cards) == [1, 2]
 
 
 def test_select_face_cards_orders_by_color_then_servant():
@@ -40,9 +45,8 @@ def test_select_face_cards_orders_by_color_then_servant():
     assert p.select_face_cards(cards) == [3, 2]
 
 
-def test_select_face_cards_pads_with_fallback():
+def test_select_face_cards_does_not_pad_with_fallback():
     p = CardPolicy(face_card_count=3, fallback_positions=[1, 2, 3])
     cards = [CardDetection(position=5, color="Arts", servant_slot=1)]
     result = p.select_face_cards(cards)
-    assert result[0] == 5
-    assert len(result) == 3
+    assert result == [5]

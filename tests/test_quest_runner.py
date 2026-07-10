@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
 from backend.core.errors import StateDetectionError
@@ -24,6 +26,7 @@ class DummyContext:
         self.current_state = FgoState.UNKNOWN
         self.phases: list[tuple[str, str]] = []
         self.actions: list[str] = []
+        self.executor = SimpleNamespace()
 
     def set_phase(self, phase: str, *, detail: str = "", clear_error: bool = True) -> None:
         self.phases.append((phase, detail))

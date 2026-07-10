@@ -66,7 +66,10 @@ export interface BattleAction {
   type: string;
   servant_slot?: number;
   skill?: number;
+  target_type?: "none" | "ally" | "enemy";
   target_slot?: number;
+  confirm?: "auto" | "always" | "never" | boolean;
+  timeout?: number;
   reserve_slot?: number;
   active_slot?: number;
   seconds?: number;
@@ -163,9 +166,27 @@ export interface QuickStartResult {
 export interface CalibrationPoint {
   key: string;
   label: string;
+  category: string;
+  default: [number, number];
+  current: [number, number];
+  overridden: boolean;
 }
 
 export interface CalibrationData {
   available: CalibrationPoint[];
   overrides: Record<string, [number, number]>;
+}
+
+export interface CalibrationExport {
+  base_resolution: [number, number];
+  points: Record<
+    string,
+    {
+      label: string;
+      category: string;
+      default: [number, number];
+      override: [number, number] | null;
+      current: [number, number];
+    }
+  >;
 }

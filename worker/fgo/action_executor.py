@@ -75,6 +75,9 @@ class ActionExecutor:
     def tap_attack(self) -> None:
         self.tap_named("ATTACK_BUTTON", C.ATTACK_BUTTON)
 
+    def tap_skill_confirm(self) -> None:
+        self.tap_named("SKILL_CONFIRM_BUTTON", C.SKILL_CONFIRM_BUTTON)
+
     def tap_servant_skill(self, slot: int, skill: int) -> None:
         pt = C.SERVANT_SKILLS.get((slot, skill))
         if pt is None:
@@ -118,11 +121,46 @@ class ActionExecutor:
             self.tap_named(f"SUPPORT_CLASS_{class_filter.upper()}", pt)
 
     def scroll_support_list(self, duration_ms: int = 300) -> None:
-        s, e = C.SUPPORT_SCROLL_START, C.SUPPORT_SCROLL_END
+        s = self.point("SUPPORT_SCROLL_START", C.SUPPORT_SCROLL_START)
+        e = self.point("SUPPORT_SCROLL_END", C.SUPPORT_SCROLL_END)
         self.swipe(s.x, s.y, e.x, e.y, duration_ms)
 
     def tap_support_refresh(self) -> None:
         self.tap_named("SUPPORT_REFRESH", C.SUPPORT_REFRESH)
+
+    def tap_support_refresh_confirm(self) -> None:
+        self.tap_named("SUPPORT_REFRESH_CONFIRM", C.SUPPORT_REFRESH_CONFIRM)
+
+    def tap_party_member_target(self, slot: int) -> None:
+        pt = C.PARTY_MEMBER_POSITIONS.get(slot)
+        if pt is None:
+            raise ActionExecutionError(f"no coordinate for party member target {slot}")
+        self.tap_named(f"PARTY_MEMBER_TARGET_{slot}", pt)
+
+    def tap_order_change_reserve(self, slot: int) -> None:
+        pt = C.ORDER_CHANGE_RESERVE.get(slot)
+        if pt is None:
+            raise ActionExecutionError(f"no coordinate for order-change reserve {slot}")
+        self.tap_named(f"ORDER_CHANGE_RESERVE_{slot}", pt)
+
+    def tap_order_change_active(self, slot: int) -> None:
+        pt = C.ORDER_CHANGE_ACTIVE.get(slot)
+        if pt is None:
+            raise ActionExecutionError(f"no coordinate for order-change active {slot}")
+        self.tap_named(f"ORDER_CHANGE_ACTIVE_{slot}", pt)
+
+    def tap_order_change_confirm(self) -> None:
+        self.tap_named("ORDER_CHANGE_CONFIRM", C.ORDER_CHANGE_CONFIRM)
+
+    def tap_ap_recovery_item(self, tier: str) -> None:
+        pt = C.AP_RECOVERY_ITEM_ROWS.get(tier, C.AP_RECOVERY_ITEM_ROWS["bronze"])
+        self.tap_named(f"AP_RECOVERY_ITEM_{tier.upper()}", pt)
+
+    def tap_ap_recovery_confirm(self) -> None:
+        self.tap_named("AP_RECOVERY_CONFIRM", C.AP_RECOVERY_CONFIRM)
+
+    def tap_ap_recovery_close(self) -> None:
+        self.tap_named("AP_RECOVERY_CLOSE", C.AP_RECOVERY_CLOSE)
 
     # --- results / flow -------------------------------------------------
 

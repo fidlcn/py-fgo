@@ -1,8 +1,8 @@
-import { MouseEvent, useRef, useState } from "react";
+import { MouseEvent, useMemo, useRef, useState } from "react";
 import { useAsync, fetchInstances } from "../api/hooks";
 import { api } from "../api/client";
 import { Card, Empty, Field } from "../components/ui";
-import type { CalibrationData } from "../types";
+import type { CalibrationData, CalibrationExport } from "../types";
 
 const BASE_W = 1280;
 const BASE_H = 720;
@@ -15,6 +15,16 @@ export function Calibration() {
   const [shot, setShot] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const selectedPoint = cal.data?.available.find((p) => p.key === pointKey);
+  const groupedPoints = useMemo(() => {
+    const groups = new Map<string, NonNullable<CalibrationData["available"]>>();
+    for (const point of cal.data?.available ?? []) {
+      const list = groups.get(point.category) ?? [];
+      list.push(point);
+      groups.set(point.category, list);
+    }
+    return Array.from(groups.entries());
+  }, [cal.data]);
 
   async function capture() {
     if (!selected) return;
@@ -41,6 +51,20 @@ export function Calibration() {
     cal.reload();
   }
 
+  async function exportPoints() {
+    const data = await api.get<CalibrationExport>("/api/calibration/export");
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `fgo-coordinates-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setMessage("已导出当前点位坐标 JSON。");
+  }
+
   return (
     <div>
       <h1 className="page-title">坐标校准</h1>
@@ -62,16 +86,44 @@ export function Calibration() {
           </Field>
           <Field label="要校准的点位">
             <select value={pointKey} onChange={(e) => setPointKey(e.target.value)}>
-              {cal.data?.available.map((p) => (
-                <option key={p.key} value={p.key}>
-                  {p.label}
-                </option>
+              {groupedPoints.map(([category, points]) => (
+                <optgroup key={category} label={category}>
+                  {points.map((p) => (
+                    <option key={p.key} value={p.key}>
+                      {p.label}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </Field>
-          <button className="btn" disabled={!selected} onClick={capture}>
-            获取截图
-          </button>
+          {selectedPoint && (
+            <div className="calibration-point-meta">
+              <div>
+                <span className="muted">Key</span>
+                <strong>{selectedPoint.key}</strong>
+              </div>
+              <div>
+                <span className="muted">默认</span>
+                <strong>{selectedPoint.default[0]}, {selectedPoint.default[1]}</strong>
+              </div>
+              <div>
+                <span className="muted">当前</span>
+                <strong>{selectedPoint.current[0]}, {selectedPoint.current[1]}</strong>
+              </div>
+              <span className={`badge ${selectedPoint.overridden ? "ok" : "muted"}`}>
+                {selectedPoint.overridden ? "已校准" : "默认值"}
+              </span>
+            </div>
+          )}
+          <div className="row">
+            <button className="btn" disabled={!selected} onClick={capture}>
+              获取截图
+            </button>
+            <button className="btn secondary" disabled={!cal.data} onClick={exportPoints}>
+              导出点位坐标
+            </button>
+          </div>
           {message && <p className="muted">{message}</p>}
         </Card>
 
@@ -104,14 +156,14 @@ export function Calibration() {
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(cal.data.overrides).map(([key, value]) => (
-                  <tr key={key}>
-                    <td>{labelFor(key, cal.data)}</td>
+                {cal.data.available.filter((p) => p.overridden).map((point) => (
+                  <tr key={point.key}>
+                    <td>{point.label}</td>
                     <td className="muted">
-                      {value[0]}, {value[1]}
+                      {point.current[0]}, {point.current[1]}
                     </td>
                     <td>
-                      <button className="btn small danger" onClick={() => clearPoint(key)}>
+                      <button className="btn small danger" onClick={() => clearPoint(point.key)}>
                         清除
                       </button>
                     </td>

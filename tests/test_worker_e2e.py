@@ -15,6 +15,7 @@ from backend.core.config import AppConfig
 from worker.adb_client import CommandResult
 from worker.fgo.battle_executor import BattleExecutor
 from worker.runtime import build_worker_context
+from worker.vision.detector import CardDetection
 
 
 def _marker_frame(text):
@@ -64,10 +65,26 @@ def test_battle_turn_tap_sequence(tmp_path):
     cfg.runtime.action_delay_ms = 0
     cfg.runtime.screenshot_interval_ms = 50
     inst = {"id": "inst_t", "adb_device_id": "127.0.0.1:7555", "resolution_width": 1280, "resolution_height": 720}
-    runner = ScriptedRunner([_png(cmd_frame), _png(card_frame), _png(card_frame)])
+    runner = ScriptedRunner(
+        [
+            _png(cmd_frame),
+            _png(cmd_frame),
+            _png(cmd_frame),
+            _png(card_frame),
+            _png(card_frame),
+            _png(card_frame),
+        ]
+    )
     ctx = build_worker_context(inst, cfg, runner=runner)
+    ctx.vision.is_skill_ready = lambda frame, servant_slot, skill: True  # type: ignore[method-assign]
+    ctx.vision.is_np_ready = lambda frame, servant_slot: True  # type: ignore[method-assign]
+    ctx.vision.find_all_cards = lambda frame: [  # type: ignore[method-assign]
+        CardDetection(position=1, color="Arts", servant_slot=1),
+        CardDetection(position=2, color="Buster", servant_slot=2),
+        CardDetection(position=3, color="Quick", servant_slot=3),
+    ]
 
-    # 3. Run a single turn: servant skill(1,1) + NP(3); 2 face cards from fallback.
+    # 3. Run a single turn: servant skill(1,1) + NP(3); 2 recognized face cards.
     plan = {
         "name": "t",
         "waves": [

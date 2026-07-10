@@ -30,6 +30,7 @@ def scale_point(x: int, y: int, actual_w: int, actual_h: int) -> Tuple[int, int]
 # --- Battle: command phase --------------------------------------------------
 
 ATTACK_BUTTON = Point(1130, 640)
+SKILL_CONFIRM_BUTTON = Point(1040, 640)
 
 # (servant_slot, skill_index) -> Point. Servant skill clusters along the
 # bottom row; slot 1 values are the spec defaults, slots 2/3 extrapolated.
@@ -58,6 +59,7 @@ ORDER_CHANGE_ACTIVE: dict[int, Point] = {
     2: Point(920, 360),
     3: Point(920, 520),
 }
+ORDER_CHANGE_CONFIRM = Point(640, 640)
 
 # --- Battle: card-select phase ----------------------------------------------
 

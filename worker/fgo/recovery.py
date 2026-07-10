@@ -13,7 +13,6 @@ from typing import Any
 from backend.core.errors import APInsufficientError
 from backend.core.logging import get_logger
 from ..runtime import WorkerContext
-from . import coordinates as C
 from .enums import ALL_AP_TIERS
 
 log = get_logger("worker.fgo.recovery")
@@ -46,6 +45,5 @@ class RecoveryHandler:
         return True
 
     def _use_item(self, tier: str) -> None:
-        pt = C.AP_RECOVERY_ITEM_ROWS.get(tier, C.AP_RECOVERY_ITEM_ROWS["bronze"])
-        self.ctx.executor.tap_point(pt)
-        self.ctx.executor.tap_point(C.AP_RECOVERY_CONFIRM)
+        self.ctx.executor.tap_ap_recovery_item(tier)
+        self.ctx.executor.tap_ap_recovery_confirm()

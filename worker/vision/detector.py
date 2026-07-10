@@ -4,11 +4,9 @@ Generic, FGO-agnostic: it matches templates in base-resolution (1280x720)
 space and reports the best-matching configured state. The ``worker.fgo``
 layer supplies the state definitions and the enum mapping.
 
-MVP behaviour (spec 8.4 / section 6):
-- ``find_all_cards`` returns ``[]`` so CardPolicy uses fixed fallback positions.
-- ``is_skill_ready`` / ``is_np_ready`` assume ready when no template is
-  configured, so the fixed-action battle flow can run end-to-end before
-  vision calibration is complete.
+Battle vision is intentionally strict for execution-critical checks: if a
+template needed to prove skill/NP readiness is missing or not matched, callers
+receive ``False`` and should stop instead of continuing with unsafe fallback.
 """
 
 from __future__ import annotations
@@ -121,9 +119,19 @@ class VisionDetector:
         return []
 
     def is_skill_ready(self, frame: Frame, servant_slot: int, skill: int) -> bool:
-        """MVP: assume skills are usable. Real readiness needs icon templates."""
-        return True
+        template_id = (
+            f"battle/skill_ready_{servant_slot}_{skill}"
+            if servant_slot > 0
+            else f"battle/master_skill_ready_{skill}"
+        )
+        tmpl = self.templates.get(template_id)
+        if tmpl is None:
+            return False
+        return self.find_template(frame, template_id).found
 
     def is_np_ready(self, frame: Frame, servant_slot: int) -> bool:
-        """MVP: assume NP is usable. Real readiness needs NP-glow templates."""
-        return True
+        template_id = f"battle/np_ready_{servant_slot}"
+        tmpl = self.templates.get(template_id)
+        if tmpl is None:
+            return False
+        return self.find_template(frame, template_id).found

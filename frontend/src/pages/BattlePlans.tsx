@@ -27,6 +27,16 @@ const ACTION_LABELS: Record<string, string> = {
 };
 const SLOTS = [1, 2, 3];
 const COLORS = ["Arts", "Buster", "Quick"];
+const TARGET_TYPE_LABELS: Record<string, string> = {
+  none: "无目标",
+  ally: "我方",
+  enemy: "敌方",
+};
+const CONFIRM_LABELS: Record<string, string> = {
+  auto: "自动",
+  always: "需要确认",
+  never: "不需要确认",
+};
 
 const DEFAULT_POLICY: CardPolicy = {
   np_order: [],
@@ -269,8 +279,25 @@ function TurnBlock({
   function addAction(type: string) {
     patch((t) => {
       const a: BattleAction = { type };
-      if (type === "servant_skill") Object.assign(a, { servant_slot: 1, skill: 1 });
-      if (type === "master_skill") Object.assign(a, { skill: 1 });
+      if (type === "servant_skill") {
+        Object.assign(a, {
+          servant_slot: 1,
+          skill: 1,
+          target_type: "none",
+          target_slot: 0,
+          confirm: "auto",
+          timeout: 8,
+        });
+      }
+      if (type === "master_skill") {
+        Object.assign(a, {
+          skill: 1,
+          target_type: "none",
+          target_slot: 0,
+          confirm: "auto",
+          timeout: 8,
+        });
+      }
       if (type === "noble_phantasm") Object.assign(a, { servant_slot: 1 });
       if (type === "select_enemy") Object.assign(a, { target_slot: 1 });
       if (type === "order_change") Object.assign(a, { reserve_slot: 1, active_slot: 1 });
@@ -330,6 +357,46 @@ function ActionRow({
       style={{ width: 80 }}
     />
   );
+  const targetType = action.target_type ?? (((action.target_slot ?? 0) > 0 ? "ally" : "none") as "none" | "ally" | "enemy");
+  const confirm = typeof action.confirm === "boolean" ? (action.confirm ? "always" : "never") : action.confirm ?? "auto";
+  const targetControls = (
+    <>
+      <span className="muted">目标类型</span>
+      <select
+        value={targetType}
+        onChange={(e) =>
+          patch((a) => {
+            a.target_type = e.target.value as "none" | "ally" | "enemy";
+            if (a.target_type === "none") a.target_slot = 0;
+            else if (!a.target_slot) a.target_slot = 1;
+          })
+        }
+        style={{ width: 96 }}
+      >
+        {Object.entries(TARGET_TYPE_LABELS).map(([value, label]) => (
+          <option key={value} value={value}>{label}</option>
+        ))}
+      </select>
+      {targetType !== "none" && (
+        <>
+          <span className="muted">编号</span>
+          {num("target_slot")}
+        </>
+      )}
+      <span className="muted">确认</span>
+      <select
+        value={confirm}
+        onChange={(e) => patch((a) => (a.confirm = e.target.value as "auto" | "always" | "never"))}
+        style={{ width: 110 }}
+      >
+        {Object.entries(CONFIRM_LABELS).map(([value, label]) => (
+          <option key={value} value={value}>{label}</option>
+        ))}
+      </select>
+      <span className="muted">超时</span>
+      {num("timeout")}
+    </>
+  );
   return (
     <div className="row spread">
       <div className="row">
@@ -340,16 +407,14 @@ function ActionRow({
             {num("servant_slot")}
             <span className="muted">技能</span>
             {num("skill")}
-            <span className="muted">目标</span>
-            {num("target_slot")}
+            {targetControls}
           </>
         )}
         {action.type === "master_skill" && (
           <>
             <span className="muted">技能</span>
             {num("skill")}
-            <span className="muted">目标</span>
-            {num("target_slot")}
+            {targetControls}
           </>
         )}
         {action.type === "noble_phantasm" && (

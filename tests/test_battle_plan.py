@@ -32,7 +32,40 @@ def test_parse_valid_plan():
     turn = parsed["waves"][0]["turns"][0]
     assert turn["turn"] == 1
     assert len(turn["actions"]) == 2
+    assert turn["actions"][0]["target_type"] == "ally"
+    assert turn["actions"][0]["target_slot"] == 3
+    assert turn["actions"][0]["confirm"] == "auto"
     assert turn["card_policy"].np_order == [3]
+
+
+def test_parse_supports_enemy_target_skill():
+    parsed = parse_battle_plan(
+        {
+            "name": "enemy target",
+            "waves": [
+                {
+                    "turns": [
+                        {
+                            "actions": [
+                                {
+                                    "type": "servant_skill",
+                                    "servant_slot": 1,
+                                    "skill": 2,
+                                    "target_type": "enemy",
+                                    "target_slot": 2,
+                                    "confirm": "always",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+        }
+    )
+    action = parsed["waves"][0]["turns"][0]["actions"][0]
+    assert action["target_type"] == "enemy"
+    assert action["target_slot"] == 2
+    assert action["confirm"] == "always"
 
 
 def test_parse_rejects_unknown_action_type():

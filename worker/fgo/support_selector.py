@@ -15,7 +15,6 @@ from typing import Any
 from backend.core.errors import SupportNotFoundError
 from backend.core.logging import get_logger
 from ..runtime import WorkerContext
-from . import coordinates as C
 from . import state_machine as sm
 from .enums import FgoState
 
@@ -72,7 +71,7 @@ class SupportSelector:
                     self._sleep(0.6)
             if attempt < max_refresh:
                 self.ctx.executor.tap_support_refresh()
-                self.ctx.executor.tap_point(C.SUPPORT_REFRESH_CONFIRM)
+                self.ctx.executor.tap_support_refresh_confirm()
                 self._sleep(0.8)
         return False
 
