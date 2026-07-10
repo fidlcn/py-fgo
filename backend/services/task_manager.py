@@ -141,6 +141,7 @@ class TaskManager:
             if not online:
                 raise ConflictError(f"instance {inst.id} is offline")
 
+            quest = r.get_quest_profile(s, task.quest_profile_id).to_dict()
             support = r.get_support_profile(s, task.support_profile_id).to_dict()
             bp = r.get_battle_plan(s, task.battle_plan_id)
             battle_plan = {"name": bp.name, "expected_party": bp.expected_party, "waves": bp.waves}
@@ -158,6 +159,7 @@ class TaskManager:
         self.workers.start(
             inst_dict,
             task_dict,
+            quest_profile=quest,
             support_profile=support,
             battle_plan=battle_plan,
             on_done=self._on_task_done,

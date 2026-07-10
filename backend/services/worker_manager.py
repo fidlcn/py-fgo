@@ -75,6 +75,7 @@ class WorkerManager:
         instance: dict[str, Any],
         task: dict[str, Any],
         *,
+        quest_profile: dict[str, Any],
         support_profile: dict[str, Any],
         battle_plan: dict[str, Any],
         on_done: Optional[Callable[[str, str, WorkerContext], None]] = None,
@@ -92,6 +93,7 @@ class WorkerManager:
         ctx.task_id = task["id"]
         runner = QuestRunner(
             ctx,
+            quest_profile=quest_profile,
             support_profile=support_profile,
             battle_plan=battle_plan,
             loop_config=task.get("loop_config", {}),

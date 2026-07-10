@@ -45,6 +45,7 @@ class QuestRunner:
         self,
         ctx: WorkerContext,
         *,
+        quest_profile: Optional[dict[str, Any]] = None,
         support_profile: Optional[dict[str, Any]] = None,
         battle_plan: Optional[dict[str, Any]] = None,
         loop_config: Optional[dict[str, Any]] = None,
@@ -54,6 +55,7 @@ class QuestRunner:
         self.support = SupportSelector(ctx)
         self.battle = BattleExecutor(ctx)
         self.recovery = RecoveryHandler(ctx)
+        self.quest_profile: dict[str, Any] = quest_profile or {}
         self.support_profile: dict[str, Any] = support_profile or {}
         self.battle_plan: dict[str, Any] = battle_plan or {}
         self.loop_config: dict[str, Any] = loop_config or {}
@@ -101,12 +103,18 @@ class QuestRunner:
 
     def run_quest(self) -> None:
         """Run exactly one quest: enter -> support -> party -> battle -> result."""
+        entry_mode = (self.quest_profile.get("entry_mode") or "current_quest").lower()
         state, _ = sm.sense(self.ctx)
         if state == FgoState.PARTY_CONFIRM:
             self.ctx.set_phase("party_confirm")
             self.ctx.record_action("start from party confirm")
         else:
-            if state != FgoState.SUPPORT_SELECT:
+            if entry_mode == "current_quest":
+                self.ctx.set_phase(
+                    "support_select",
+                    detail="当前关卡模式：从助战选择页开始，不等待关卡入口",
+                )
+            elif state != FgoState.SUPPORT_SELECT:
                 self._enter_quest()
             self.ctx.set_phase("support_select", detail="等待并选择助战")
             self.support.select(self.support_profile)
@@ -120,7 +128,7 @@ class QuestRunner:
 
     def _enter_quest(self) -> None:
         ctx = self.ctx
-        ctx.set_phase("quest_entry", detail="确认关卡入口页")
+        ctx.set_phase("quest_entry", detail="自动入口模式：等待关卡入口页，后续可扩展 OCR 找关卡")
         state, _ = sm.sense(ctx)
         if state in (FgoState.SUPPORT_SELECT, FgoState.PARTY_CONFIRM):
             return

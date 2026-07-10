@@ -25,7 +25,7 @@ class FakeWorkerManager:
     def get_context(self, instance_id):
         return None
 
-    def start(self, instance, task, *, support_profile, battle_plan, on_done=None):
+    def start(self, instance, task, *, quest_profile, support_profile, battle_plan, on_done=None):
         self.started.append(task["id"])
         self._running.add(instance["id"])
         self._on_done = on_done
