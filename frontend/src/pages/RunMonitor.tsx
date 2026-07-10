@@ -117,6 +117,10 @@ export function RunMonitor() {
             </div>
             <div className="muted">最近动作</div>
             <div>{current.live_action ?? "—"}</div>
+            <div className="muted" style={{ marginTop: 10 }}>
+              阶段详情
+            </div>
+            <div>{current.live_phase_detail || "—"}</div>
             <div style={{ marginTop: 16 }}>
               <div className="muted" style={{ marginBottom: 8 }}>
                 流程节点

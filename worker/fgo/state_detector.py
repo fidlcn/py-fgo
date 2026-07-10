@@ -160,6 +160,19 @@ class StateDetector:
             if last == target:
                 return last
             time.sleep(interval)
+        missing = self._missing_templates(target)
+        detail = f" missing_templates={missing}" if missing else ""
         raise StateDetectionError(
-            f"timed out after {deadline_timeout:.1f}s waiting for {target.value} (last={last.value})"
+            f"timed out after {deadline_timeout:.1f}s waiting for {target.value} "
+            f"(last={last.value}){detail}"
         )
+
+    def _missing_templates(self, target: FgoState) -> list[str]:
+        state_def = self.registry.get(target)
+        if state_def is None:
+            return []
+        missing: list[str] = []
+        for template_id in state_def.templates:
+            if self.vision.templates.get(template_id) is None:
+                missing.append(template_id)
+        return missing

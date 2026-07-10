@@ -108,36 +108,39 @@ class QuestRunner:
         else:
             if state != FgoState.SUPPORT_SELECT:
                 self._enter_quest()
-            self.ctx.set_phase("support_select")
+            self.ctx.set_phase("support_select", detail="等待并选择助战")
             self.support.select(self.support_profile)
         self._confirm_party()
-        self.ctx.set_phase("battle")
+        self.ctx.set_phase("battle", detail="执行战斗方案")
         self.battle.run_plan(self.battle_plan)
-        self.ctx.set_phase("result")
+        self.ctx.set_phase("result", detail="处理战斗结算")
         self._finish_result()
 
     # --- phases ---------------------------------------------------------
 
     def _enter_quest(self) -> None:
         ctx = self.ctx
-        ctx.set_phase("quest_entry")
+        ctx.set_phase("quest_entry", detail="确认关卡入口页")
         state, _ = sm.sense(ctx)
         if state in (FgoState.SUPPORT_SELECT, FgoState.PARTY_CONFIRM):
             return
         if state != FgoState.QUEST_DETAIL:
+            ctx.set_phase_detail("等待关卡入口状态 QUEST_DETAIL")
             sm.wait_state(ctx, FgoState.QUEST_DETAIL, timeout=10.0)
         ctx.executor.tap_named("QUEST_DETAIL_START", C.QUEST_DETAIL_START)
         ctx.record_action("tap quest entry")
+        ctx.set_phase("support_select", detail="已点击关卡，等待助战选择状态 SUPPORT_SELECT")
         sm.wait_state(ctx, FgoState.SUPPORT_SELECT, timeout=15.0)
 
     def _confirm_party(self) -> None:
         ctx = self.ctx
-        ctx.set_phase("party_confirm")
+        ctx.set_phase("party_confirm", detail="等待队伍确认状态 PARTY_CONFIRM")
         state, _ = sm.sense(ctx)
         if state != FgoState.PARTY_CONFIRM:
             sm.wait_state(ctx, FgoState.PARTY_CONFIRM, timeout=10.0)
         ctx.executor.tap_quest_start()
         ctx.record_action("tap quest start (party confirm)")
+        ctx.set_phase("battle", detail="已点击开始任务，等待战斗指令状态 BATTLE_COMMAND")
         sm.wait_state(ctx, FgoState.BATTLE_COMMAND, timeout=30.0)
 
     def _finish_result(self) -> None:
@@ -152,7 +155,7 @@ class QuestRunner:
                 ctx.record_action("back to quest entry; ready to repeat")
                 return
             if state == FgoState.AP_INSUFFICIENT:
-                ctx.set_phase("ap_recovery")
+                ctx.set_phase("ap_recovery", detail="检测到 AP 不足，准备恢复 AP")
                 if self.recovery.handle_ap_insufficient(self.ap_recovery):
                     return  # AP recovered; outer loop will re-enter the quest
                 return

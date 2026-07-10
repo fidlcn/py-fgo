@@ -105,6 +105,7 @@ class WorkerContext:
     current_state: FgoState = FgoState.UNKNOWN
     last_action: str = ""
     current_phase: str = "idle"
+    phase_detail: str = ""
     phase_error: Optional[str] = None
     completed_count: int = 0
     failure_count: int = 0
@@ -118,10 +119,15 @@ class WorkerContext:
         self.last_action = description
         log.debug("[%s] %s", self.instance_id, description)
 
-    def set_phase(self, phase: str, *, clear_error: bool = True) -> None:
+    def set_phase(self, phase: str, *, detail: str = "", clear_error: bool = True) -> None:
         self.current_phase = phase
+        self.phase_detail = detail
         if clear_error:
             self.phase_error = None
+        self.publish_status()
+
+    def set_phase_detail(self, detail: str) -> None:
+        self.phase_detail = detail
         self.publish_status()
 
     def set_phase_error(self, error: str) -> None:
@@ -135,6 +141,7 @@ class WorkerContext:
             "state": self.current_state.value,
             "phase": self.current_phase,
             "phase_label": PHASE_LABELS.get(self.current_phase, self.current_phase),
+            "phase_detail": self.phase_detail,
             "phase_error": self.phase_error,
             "completed_count": self.completed_count,
             "failure_count": self.failure_count,

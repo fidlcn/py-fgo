@@ -23,6 +23,7 @@ export interface Instance {
   live_state?: string;
   live_phase?: string;
   live_phase_label?: string;
+  live_phase_detail?: string;
   live_phase_error?: string | null;
   live_completed?: number;
   live_failure?: number;
