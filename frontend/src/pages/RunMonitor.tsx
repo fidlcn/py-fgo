@@ -10,6 +10,7 @@ const FLOW_NODES = [
   { id: "party_confirm", title: "队伍确认" },
   { id: "battle", title: "战斗执行" },
   { id: "result", title: "结算处理" },
+  { id: "repeat_confirm", title: "连续出击确认" },
   { id: "ap_recovery", title: "AP 恢复" },
   { id: "loop_complete", title: "回到入口" },
 ];
@@ -37,6 +38,7 @@ export function RunMonitor() {
       try {
         const blob = await api.raw(`/api/instances/${selected}/screenshot`);
         setShot(URL.createObjectURL(blob));
+        inst.reload();
         failures.current = 0;
         setShotError(null);
       } catch (e) {
@@ -91,6 +93,7 @@ export function RunMonitor() {
                 failures.current = 0;
                 const blob = await api.raw(`/api/instances/${selected}/screenshot`);
                 setShot(URL.createObjectURL(blob));
+                inst.reload();
                 setShotError(null);
               } catch (e) {
                 setShotError(e instanceof Error ? e.message : String(e));
@@ -132,6 +135,14 @@ export function RunMonitor() {
               阶段详情
             </div>
             <div>{current.live_phase_detail || "—"}</div>
+            <div className="muted" style={{ marginTop: 10 }}>
+              识别模板
+            </div>
+            <div>{current.live_matched_template || "—"}</div>
+            <div className="muted" style={{ marginTop: 10 }}>
+              置信度
+            </div>
+            <div>{typeof current.live_confidence === "number" ? current.live_confidence.toFixed(3) : "—"}</div>
             <div style={{ marginTop: 16 }}>
               <div className="muted" style={{ marginBottom: 8 }}>
                 流程节点

@@ -37,6 +37,7 @@ PHASE_LABELS: dict[str, str] = {
     "party_confirm": "队伍确认",
     "battle": "战斗执行",
     "result": "结算处理",
+    "repeat_confirm": "连续出击确认",
     "ap_recovery": "AP 恢复",
     "loop_complete": "回到入口",
     "failed": "任务失败",
@@ -107,6 +108,8 @@ class WorkerContext:
     current_phase: str = "idle"
     phase_detail: str = ""
     phase_error: Optional[str] = None
+    latest_confidence: float = 0.0
+    latest_matched_template: Optional[str] = None
     completed_count: int = 0
     failure_count: int = 0
     last_error: Optional[str] = None
@@ -135,6 +138,10 @@ class WorkerContext:
         self.publish_status()
 
     def publish_status(self, **extra: Any) -> None:
+        if "confidence" in extra:
+            self.latest_confidence = float(extra["confidence"])
+        if "matched_template" in extra:
+            self.latest_matched_template = extra["matched_template"]
         payload: dict[str, Any] = {
             "instance_id": self.instance_id,
             "task_id": self.task_id,
@@ -143,6 +150,8 @@ class WorkerContext:
             "phase_label": PHASE_LABELS.get(self.current_phase, self.current_phase),
             "phase_detail": self.phase_detail,
             "phase_error": self.phase_error,
+            "confidence": self.latest_confidence,
+            "matched_template": self.latest_matched_template,
             "completed_count": self.completed_count,
             "failure_count": self.failure_count,
             "last_action": self.last_action,

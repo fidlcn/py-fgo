@@ -131,4 +131,6 @@ AP_RECOVERY_CLOSE = Point(640, 660)
 
 RESULT_NEXT = Point(1100, 640)  # "Next" / continue button on result screens
 FRIEND_REQUEST_DECLINE = Point(400, 600)
+REPEAT_CONFIRM_CLOSE = Point(430, 585)
+REPEAT_CONFIRM_CONTINUE = Point(850, 585)
 QUEST_START_BUTTON = Point(1130, 640)  # party confirm "Start Quest"

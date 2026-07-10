@@ -134,3 +134,9 @@ class ActionExecutor:
 
     def decline_friend_request(self) -> None:
         self.tap_named("FRIEND_REQUEST_DECLINE", C.FRIEND_REQUEST_DECLINE)
+
+    def close_repeat_confirm(self) -> None:
+        self.tap_named("REPEAT_CONFIRM_CLOSE", C.REPEAT_CONFIRM_CLOSE)
+
+    def continue_repeat_confirm(self) -> None:
+        self.tap_named("REPEAT_CONFIRM_CONTINUE", C.REPEAT_CONFIRM_CONTINUE)

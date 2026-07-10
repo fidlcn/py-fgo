@@ -54,6 +54,8 @@ def list_instances(
             item["live_phase_label"] = PHASE_LABELS.get(ctx.current_phase, ctx.current_phase)
             item["live_phase_detail"] = ctx.phase_detail
             item["live_phase_error"] = ctx.phase_error
+            item["live_confidence"] = ctx.latest_confidence
+            item["live_matched_template"] = ctx.latest_matched_template
             item["live_completed"] = ctx.completed_count
             item["live_failure"] = ctx.failure_count
             item["live_action"] = ctx.last_action

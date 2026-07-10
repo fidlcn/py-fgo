@@ -25,6 +25,8 @@ export interface Instance {
   live_phase_label?: string;
   live_phase_detail?: string;
   live_phase_error?: string | null;
+  live_confidence?: number;
+  live_matched_template?: string | null;
   live_completed?: number;
   live_failure?: number;
   live_action?: string;

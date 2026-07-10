@@ -95,6 +95,7 @@ STATE_REGISTRY: dict[FgoState, FgoStateDef] = {
     FgoState.BOND_RESULT: FgoStateDef(FgoState.BOND_RESULT, ["battle/bond_result"]),
     FgoState.DROP_RESULT: FgoStateDef(FgoState.DROP_RESULT, ["battle/drop_result"]),
     FgoState.FRIEND_REQUEST: FgoStateDef(FgoState.FRIEND_REQUEST, ["battle/friend_request"]),
+    FgoState.REPEAT_CONFIRM: FgoStateDef(FgoState.REPEAT_CONFIRM, ["battle/repeat_confirm"]),
     FgoState.NETWORK_ERROR: FgoStateDef(FgoState.NETWORK_ERROR, ["common/network_error"]),
     FgoState.APP_CRASHED: FgoStateDef(FgoState.APP_CRASHED, ["common/app_crashed"]),
 }

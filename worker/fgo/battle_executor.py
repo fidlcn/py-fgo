@@ -15,6 +15,7 @@ from backend.core.errors import BattlePlanError
 from backend.core.logging import get_logger
 from ..runtime import WorkerContext
 from . import coordinates as C
+from . import state_machine as sm
 from .card_policy import CardPolicy
 from .enums import (
     ACTION_FACE_CARDS,
@@ -214,12 +215,7 @@ class BattleExecutor:
     # --- helpers --------------------------------------------------------
 
     def _wait(self, target: FgoState, timeout: float) -> None:
-        self.state.wait_for_state(
-            target,
-            self.ctx.screenshots,
-            timeout=timeout,
-            should_stop=self.ctx.control.stop_requested,
-        )
+        sm.wait_state(self.ctx, target, timeout=timeout)
 
     def _sleep_interruptible(self, seconds: float) -> None:
         """Sleep in small increments so stop/pause are responsive."""

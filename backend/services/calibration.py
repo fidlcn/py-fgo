@@ -22,6 +22,8 @@ POINTS: dict[str, str] = {
     "SUPPORT_FIRST_RECOMMENDED": "助战：推荐第一个",
     "RESULT_NEXT": "结算：下一步",
     "FRIEND_REQUEST_DECLINE": "好友申请：拒绝",
+    "REPEAT_CONFIRM_CONTINUE": "连续出击确认：连续出击",
+    "REPEAT_CONFIRM_CLOSE": "连续出击确认：关闭",
 }
 
 

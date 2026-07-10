@@ -106,6 +106,13 @@ class QuestRunner:
         """Run exactly one quest: enter -> support -> party -> battle -> result."""
         entry_mode = (self.quest_profile.get("entry_mode") or "current_quest").lower()
         state, _ = sm.sense(self.ctx)
+        if state == FgoState.BATTLE_COMMAND:
+            self.ctx.set_phase("battle", detail="从战斗指令页接管，执行战斗方案")
+            self.ctx.record_action("start from battle command")
+            self._run_battle_and_result()
+            return
+        if state == FgoState.BATTLE_CARD_SELECT:
+            raise BattlePlanError("当前停在选卡页，无法从中途安全套用完整战斗方案；请回到战斗指令页后再启动")
         if state == FgoState.PARTY_CONFIRM:
             self.ctx.set_phase("party_confirm")
             self.ctx.record_action("start from party confirm")
@@ -120,6 +127,9 @@ class QuestRunner:
             self.ctx.set_phase("support_select", detail="等待并选择助战")
             self.support.select(self.support_profile)
         self._confirm_party()
+        self._run_battle_and_result()
+
+    def _run_battle_and_result(self) -> None:
         self.ctx.set_phase("battle", detail="执行战斗方案")
         self.battle.run_plan(self.battle_plan)
         self.ctx.set_phase("result", detail="处理战斗结算")
@@ -171,6 +181,15 @@ class QuestRunner:
             if state == FgoState.FRIEND_REQUEST:
                 ctx.executor.decline_friend_request()
                 ctx.record_action("decline friend request")
+            elif state == FgoState.REPEAT_CONFIRM:
+                ctx.set_phase("repeat_confirm", detail="检测到连续出击确认弹窗")
+                if self._should_continue_after_current():
+                    ctx.executor.continue_repeat_confirm()
+                    ctx.record_action("repeat confirm: continue sortie")
+                    return
+                ctx.executor.close_repeat_confirm()
+                ctx.record_action("repeat confirm: close")
+                return
             elif state in _RESULT_STATES:
                 ctx.executor.tap_result_next()
                 ctx.record_action("tap result next")
@@ -188,6 +207,15 @@ class QuestRunner:
                 time.sleep(0.7)
             ticks += 1
         log.warning("result phase did not reach quest entry after %d ticks", max_ticks)
+
+    def _should_continue_after_current(self) -> bool:
+        cfg = self.loop_config or {}
+        mode = cfg.get("mode", "count")
+        if mode == "count":
+            target = int(cfg.get("count", 1))
+            return self.ctx.completed_count + 1 < target
+        # Non-count modes keep looping until AP/recovery logic stops them.
+        return True
 
     # --- failure handling ----------------------------------------------
 

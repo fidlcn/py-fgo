@@ -8,8 +8,10 @@ both honoring pause/stop at safe points.
 
 from __future__ import annotations
 
+import time
 from typing import Optional
 
+from backend.core.errors import StateDetectionError
 from ..runtime import WorkerContext
 from ..screenshot import Frame
 from .enums import FgoState
@@ -31,11 +33,37 @@ def wait_state(
     timeout: Optional[float] = None,
     interval_ms: int = 700,
 ) -> FgoState:
-    """Block until ``target`` is detected (or timeout). Honors stop."""
-    return ctx.state_detector.wait_for_state(
-        target,
-        ctx.screenshots,
-        timeout=timeout,
-        interval_ms=interval_ms,
-        should_stop=ctx.control.stop_requested,
+    """Block until ``target`` is detected (or timeout). Honors stop.
+
+    Unlike :meth:`StateDetector.wait_for_state`, this wrapper updates the
+    worker context on every polling tick, so the UI can show the real current
+    state, confidence and matched template while a task is waiting.
+    """
+    state_def = ctx.state_detector.registry.get(target)
+    deadline_timeout = (
+        timeout
+        if timeout is not None
+        else state_def.timeout_seconds
+        if state_def is not None
+        else 15.0
     )
+    deadline = time.monotonic() + deadline_timeout
+    interval = max(0.1, interval_ms / 1000.0)
+    last = FgoState.UNKNOWN
+
+    while time.monotonic() < deadline:
+        if ctx.control.stop_requested:
+            raise StateDetectionError(f"interrupted while waiting for {target.value}")
+        last, _ = sense(ctx)
+        if last == target:
+            return last
+        time.sleep(interval)
+
+    missing = ctx.state_detector._missing_templates(target)
+    detail = f" missing_templates={missing}" if missing else ""
+    msg = (
+        f"timed out after {deadline_timeout:.1f}s waiting for {target.value} "
+        f"(last={last.value}){detail}"
+    )
+    ctx.set_phase_error(msg)
+    raise StateDetectionError(msg)

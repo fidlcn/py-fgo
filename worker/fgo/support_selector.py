@@ -16,6 +16,7 @@ from backend.core.errors import SupportNotFoundError
 from backend.core.logging import get_logger
 from ..runtime import WorkerContext
 from . import coordinates as C
+from . import state_machine as sm
 from .enums import FgoState
 
 log = get_logger("worker.fgo.support")
@@ -84,12 +85,7 @@ class SupportSelector:
         return None
 
     def _wait(self, target: FgoState, timeout: float) -> None:
-        self.ctx.state_detector.wait_for_state(
-            target,
-            self.ctx.screenshots,
-            timeout=timeout,
-            should_stop=self.ctx.control.stop_requested,
-        )
+        sm.wait_state(self.ctx, target, timeout=timeout)
 
     def _sleep(self, seconds: float) -> None:
         time.sleep(max(0.0, seconds))
