@@ -18,6 +18,7 @@ from backend.core.errors import (
     APInsufficientError,
     BattlePlanError,
     FgoError,
+    StateDetectionError,
     SupportNotFoundError,
     TaskStoppedError,
 )
@@ -117,7 +118,9 @@ class QuestRunner:
             self.ctx.set_phase("party_confirm")
             self.ctx.record_action("start from party confirm")
         else:
-            if entry_mode == "current_quest":
+            if state == FgoState.QUEST_DETAIL:
+                self._enter_quest()
+            elif entry_mode == "current_quest":
                 self.ctx.set_phase(
                     "support_select",
                     detail="当前关卡模式：等待助战选择状态 SUPPORT_SELECT",
@@ -176,6 +179,7 @@ class QuestRunner:
             if state == FgoState.AP_INSUFFICIENT:
                 ctx.set_phase("ap_recovery", detail="检测到 AP 不足，准备恢复 AP")
                 if self.recovery.handle_ap_insufficient(self.ap_recovery):
+                    self._wait_for_next_sortie_takeover()
                     return  # AP recovered; outer loop will re-enter the quest
                 return
             if state == FgoState.FRIEND_REQUEST:
@@ -186,6 +190,7 @@ class QuestRunner:
                 if self._should_continue_after_current():
                     ctx.executor.continue_repeat_confirm()
                     ctx.record_action("repeat confirm: continue sortie")
+                    self._wait_for_next_sortie_takeover(recover_ap=True)
                     return
                 ctx.executor.close_repeat_confirm()
                 ctx.record_action("repeat confirm: close")
@@ -206,7 +211,29 @@ class QuestRunner:
                 # UNKNOWN / loading: nudge with a small wait.
                 time.sleep(0.7)
             ticks += 1
-        log.warning("result phase did not reach quest entry after %d ticks", max_ticks)
+        msg = f"result phase did not reach a stable repeat point after {max_ticks} ticks"
+        log.warning(msg)
+        raise StateDetectionError(msg)
+
+    def _wait_for_next_sortie_takeover(self, *, recover_ap: bool = False) -> None:
+        """Wait until the next sortie is safe for the outer loop to take over."""
+        stable_states = {
+            FgoState.SUPPORT_SELECT,
+            FgoState.PARTY_CONFIRM,
+            FgoState.BATTLE_COMMAND,
+            FgoState.QUEST_DETAIL,
+        }
+        deadline = time.monotonic() + 30.0
+        while time.monotonic() < deadline:
+            self.ctx.control.checkpoint()
+            state, _ = sm.sense(self.ctx)
+            if state in stable_states:
+                return
+            if recover_ap and state == FgoState.AP_INSUFFICIENT:
+                self.ctx.set_phase("ap_recovery", detail="连续出击 AP 不足，准备恢复 AP")
+                self.recovery.handle_ap_insufficient(self.ap_recovery)
+            time.sleep(0.7)
+        raise StateDetectionError("timed out waiting for next sortie takeover")
 
     def _should_continue_after_current(self) -> bool:
         cfg = self.loop_config or {}
@@ -232,9 +259,9 @@ class QuestRunner:
             self.ctx.last_error,
         )
         self.ctx.publish_status(event="quest_failed", error=self.ctx.last_error)
-        if stop_on_failure and self.ctx.failure_count >= max_failures:
-            return True
-        return not stop_on_failure
+        if not stop_on_failure:
+            return False
+        return self.ctx.failure_count >= max_failures
 
     def _save_error_screenshot(self, exc: Exception) -> Optional[str]:
         """Capture + persist the current frame for post-mortem (spec 13/17)."""

@@ -20,13 +20,23 @@ export function RunMonitor() {
   const [selected, setSelected] = usePersistentState("py-fgo.monitor.selected-instance", "");
   const [shot, setShot] = useState<string | null>(null);
   const [auto, setAuto] = usePersistentState("py-fgo.monitor.auto-refresh", true);
-  const [phaseCache, setPhaseCache] = usePersistentState<Record<string, string>>(
-    "py-fgo.monitor.phase-cache",
-    {}
-  );
   const [shotError, setShotError] = useState<string | null>(null);
   const timer = useRef<number | null>(null);
   const failures = useRef(0);
+
+  useEffect(() => {
+    const reloadWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        inst.reload();
+      }
+    };
+    window.addEventListener("focus", inst.reload);
+    document.addEventListener("visibilitychange", reloadWhenVisible);
+    return () => {
+      window.removeEventListener("focus", inst.reload);
+      document.removeEventListener("visibilitychange", reloadWhenVisible);
+    };
+  }, [inst.reload]);
 
   useEffect(() => {
     if (!selected) return;
@@ -58,11 +68,7 @@ export function RunMonitor() {
   }, [selected, auto]);
 
   const current = inst.data?.find((i) => i.id === selected);
-  useEffect(() => {
-    if (!selected || !current?.live_phase) return;
-    setPhaseCache({ ...phaseCache, [selected]: current.live_phase });
-  }, [selected, current?.live_phase]);
-  const displayPhase = current?.live_phase ?? phaseCache[selected];
+  const displayPhase = current?.live_phase;
   const displayPhaseLabel = current?.live_phase_label ?? labelForPhase(displayPhase);
   const flow = current ? buildFlow(displayPhase, current.live_phase_error) : null;
 
@@ -162,10 +168,11 @@ export function RunMonitor() {
 }
 
 function buildFlow(phase: string | undefined, phaseError: string | null | undefined) {
-  const currentIndex = Math.max(0, FLOW_NODES.findIndex((node) => node.id === phase));
+  const currentIndex = phase ? FLOW_NODES.findIndex((node) => node.id === phase) : -1;
   return FLOW_NODES.map((node, index) => {
     let status: "done" | "current" | "wait" | "error" = "wait";
-    if (phaseError && index === currentIndex) status = "error";
+    if (currentIndex < 0) status = "wait";
+    else if (phaseError && index === currentIndex) status = "error";
     else if (index < currentIndex) status = "done";
     else if (index === currentIndex) status = "current";
     return { ...node, status };

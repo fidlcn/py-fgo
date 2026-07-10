@@ -34,9 +34,13 @@ class TemplateRegistry:
         return self.template_dir / f"{template_id}.png"
 
     def get(self, template_id: str) -> Optional[np.ndarray]:
-        if template_id in self._cache:
-            return self._cache[template_id]
         path = self.resolve_path(template_id)
+        if template_id in self._cache:
+            cached = self._cache[template_id]
+            if cached is not None or not path.exists():
+                return cached
+            # A template may be captured while the backend is already running.
+            # Reload missing entries once their file appears on disk.
         if not path.exists():
             if self._warn_missing:
                 log.debug("template missing: %s", template_id)
