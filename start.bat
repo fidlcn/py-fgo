@@ -47,13 +47,29 @@ if exist "frontend\package.json" (
     exit /b 1
 )
 
-echo [4/4] Starting backend and frontend...
+echo [4/4] Starting backend...
 set "ROOT=%cd%"
 start "py-fgo backend" /D "%ROOT%" cmd /k ".venv\Scripts\python.exe -m uvicorn backend.app:app --reload --host localhost --port 8765"
+
+echo Waiting for backend health check...
+for /L %%i in (1,1,30) do (
+    powershell -NoProfile -Command "try { $r = Invoke-WebRequest -UseBasicParsing 'http://localhost:8765/health' -TimeoutSec 1; if ($r.StatusCode -eq 200) { exit 0 }; exit 1 } catch { exit 1 }" >nul 2>nul
+    if not errorlevel 1 goto backend_ready
+    timeout /t 1 /nobreak >nul
+)
+
+echo Backend did not respond on http://localhost:8765/health.
+echo Please check the "py-fgo backend" window for the Python error.
+pause
+exit /b 1
+
+:backend_ready
+echo Backend is ready.
+echo Starting frontend...
 start "py-fgo frontend" /D "%ROOT%\frontend" cmd /k "npm run dev"
 
-echo Waiting for services to start...
-timeout /t 4 /nobreak >nul
+echo Waiting for frontend to start...
+timeout /t 3 /nobreak >nul
 start "" "http://localhost:5173"
 
 echo.
