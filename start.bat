@@ -52,12 +52,17 @@ set "ROOT=%cd%"
 start "py-fgo backend" /D "%ROOT%" cmd /k ".venv\Scripts\python.exe -m uvicorn backend.app:app --reload --host localhost --port 8765"
 
 echo Waiting for backend health check...
-for /L %%i in (1,1,30) do (
-    powershell -NoProfile -Command "try { $r = Invoke-WebRequest -UseBasicParsing 'http://localhost:8765/health' -TimeoutSec 1; if ($r.StatusCode -eq 200) { exit 0 }; exit 1 } catch { exit 1 }" >nul 2>nul
-    if not errorlevel 1 goto backend_ready
-    timeout /t 1 /nobreak >nul
-)
+set /a BACKEND_WAIT=0
 
+:wait_backend
+curl.exe --silent --fail "http://localhost:8765/health" >nul 2>nul
+if not errorlevel 1 goto backend_ready
+set /a BACKEND_WAIT+=1
+if %BACKEND_WAIT% GEQ 30 goto backend_failed
+timeout /t 1 /nobreak >nul
+goto wait_backend
+
+:backend_failed
 echo Backend did not respond on http://localhost:8765/health.
 echo Please check the "py-fgo backend" window for the Python error.
 pause
