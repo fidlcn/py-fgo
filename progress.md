@@ -20,3 +20,11 @@
 - Updated related unit/e2e tests and verified the focused test set.
 - Fixed test isolation by giving `app_client` a fresh `EventBus`.
 - Full `.venv/bin/python -m pytest` now passes: 54/54.
+- Investigated a runtime failure where servant skills failed before tapping with `skill is not ready`.
+- Root cause: readiness templates such as `battle/skill_ready_1_3.png` were missing, and the strict readiness check treated missing templates as unavailable.
+- Changed readiness checks so missing readiness templates do not block execution; present templates remain strict.
+- Full `.venv/bin/python -m pytest` now passes: 56/56.
+- Updated the battle skill flow to avoid per-skill readiness templates entirely.
+- Skill actions now tap the configured skill coordinate first, detect whether the screen entered a release flow, then use target coordinates and the common confirm/cancel points.
+- Skill confirmation now checks screenshots before and after the common confirm tap; if the confirm tap does not advance the flow, the executor taps cancel and returns a battle error.
+- Updated `doc/auto_battle_module_refactor_plan.md` so `skill_ready_*` templates are no longer listed as required battle-flow templates.

@@ -11,6 +11,9 @@ from __future__ import annotations
 import time
 from typing import Any
 
+import cv2
+import numpy as np
+
 from backend.core.errors import BattlePlanError
 from backend.core.logging import get_logger
 from ..runtime import WorkerContext
@@ -297,19 +300,20 @@ class BattleExecutor:
         atype = action["type"]
         action_index = int(action.get("action_index", 0))
         skill = int(action["skill"])
-        frame = self.ctx.screenshots.capture()
+        before = self.ctx.screenshots.capture()
         if atype == ACTION_SERVANT_SKILL:
             slot = int(action["servant_slot"])
-            if not self.ctx.vision.is_skill_ready(frame, slot, skill):
-                self._fail(wave, turn, action_index, atype, f"servant {slot} skill {skill} is not ready")
             self.exec_.tap_servant_skill(slot, skill)
             self.ctx.record_action(f"servant_skill slot={slot} skill={skill}")
         else:
-            if not self.ctx.vision.is_skill_ready(frame, 0, skill):
-                self._fail(wave, turn, action_index, atype, f"master skill {skill} is not ready")
             self.exec_.tap_master_skill(skill)
             self.ctx.record_action(f"master_skill skill={skill}")
         self.ctx.publish_status(wave=wave, turn=turn, action_index=action_index, action=atype)
+        self._sleep_interruptible(0.25)
+        after = self.ctx.screenshots.capture()
+        if not self._frame_changed(before.image, after.image):
+            self.exec_.tap_skill_cancel()
+            self._fail(wave, turn, action_index, atype, "skill tap did not open a release flow")
         self._resolve_skill_dialogs(action, wave, turn)
 
     def _resolve_skill_dialogs(self, action: dict[str, Any], wave: int, turn: int) -> None:
@@ -318,43 +322,41 @@ class BattleExecutor:
         confirm = action["confirm"]
         action_index = int(action.get("action_index", 0))
         atype = action["type"]
-        deadline = time.monotonic() + float(action.get("timeout", 8.0))
-        confirmed = False
-        selected_target = False
+        timeout = float(action.get("timeout", 8.0))
 
-        while time.monotonic() < deadline:
-            self.ctx.control.checkpoint()
-            state, _ = sm.sense(self.ctx)
-            if state == FgoState.SKILL_CONFIRM:
-                if confirm == CONFIRM_NEVER:
-                    self._fail(wave, turn, action_index, atype, "unexpected skill confirmation dialog")
-                self.exec_.tap_skill_confirm()
-                confirmed = True
-                self.ctx.record_action("tap skill confirm")
-                self.ctx.publish_status(wave=wave, turn=turn, action_index=action_index, action=atype)
-            elif state == FgoState.ALLY_TARGET_SELECT:
-                if target_type != TARGET_ALLY:
-                    self._fail(wave, turn, action_index, atype, "unexpected ally target selection")
-                self.exec_.tap_party_member_target(target_slot)
-                selected_target = True
-                self.ctx.record_action(f"target ally slot={target_slot}")
-                self.ctx.publish_status(wave=wave, turn=turn, action_index=action_index, action=atype)
-            elif state == FgoState.ENEMY_TARGET_SELECT:
-                if target_type != TARGET_ENEMY:
-                    self._fail(wave, turn, action_index, atype, "unexpected enemy target selection")
-                self.exec_.tap_enemy(target_slot)
-                selected_target = True
-                self.ctx.record_action(f"target enemy slot={target_slot}")
-                self.ctx.publish_status(wave=wave, turn=turn, action_index=action_index, action=atype)
-            elif state == FgoState.BATTLE_COMMAND:
-                if confirm == CONFIRM_ALWAYS and not confirmed:
-                    self._fail(wave, turn, action_index, atype, "expected skill confirmation dialog")
-                if target_type != TARGET_NONE and not selected_target:
-                    self._fail(wave, turn, action_index, atype, f"expected {target_type} target selection")
-                return
-            time.sleep(0.25)
+        if target_type == TARGET_ALLY:
+            self.exec_.tap_party_member_target(target_slot)
+            self.ctx.record_action(f"target ally slot={target_slot}")
+            self.ctx.publish_status(wave=wave, turn=turn, action_index=action_index, action=atype)
+            self._sleep_interruptible(0.2)
+        elif target_type == TARGET_ENEMY:
+            self.exec_.tap_enemy(target_slot)
+            self.ctx.record_action(f"target enemy slot={target_slot}")
+            self.ctx.publish_status(wave=wave, turn=turn, action_index=action_index, action=atype)
+            self._sleep_interruptible(0.2)
 
-        self._fail(wave, turn, action_index, atype, "timed out resolving skill dialogs")
+        if confirm != CONFIRM_NEVER:
+            before_confirm = self.ctx.screenshots.capture()
+            self.exec_.tap_skill_confirm()
+            self.ctx.record_action("tap skill confirm")
+            self.ctx.publish_status(wave=wave, turn=turn, action_index=action_index, action=atype)
+            self._sleep_interruptible(0.25)
+            after_confirm = self.ctx.screenshots.capture()
+            if not self._frame_changed(before_confirm.image, after_confirm.image):
+                self.exec_.tap_skill_cancel()
+                self._fail(wave, turn, action_index, atype, "skill confirm did not advance release flow")
+
+        try:
+            self._wait(FgoState.BATTLE_COMMAND, timeout=timeout)
+        except Exception as exc:
+            self.exec_.tap_skill_cancel()
+            self._fail(wave, turn, action_index, atype, f"skill release did not return to command phase: {exc}")
+
+    def _frame_changed(self, before: np.ndarray, after: np.ndarray) -> bool:
+        if before.shape != after.shape:
+            after = cv2.resize(after, (before.shape[1], before.shape[0]))
+        diff = cv2.absdiff(before, after)
+        return float(np.mean(diff)) >= 2.0
 
     def _order_change(self, action: dict[str, Any], wave: int, turn: int) -> None:
         action_index = int(action.get("action_index", 0))

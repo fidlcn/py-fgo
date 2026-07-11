@@ -78,3 +78,17 @@ def test_state_detector_maps_to_enum(tmp_path):
     state, conf, _ = sd.detect(_make_frame("attack"))
     assert state is FgoState.BATTLE_COMMAND
     assert conf > 0.8
+
+
+def test_skill_ready_template_missing_does_not_block(tmp_path):
+    reg = TemplateRegistry(tmp_path)
+    det = VisionDetector(reg, template_threshold=0.8)
+    assert det.is_skill_ready(_make_frame("attack"), 1, 3) is True
+
+
+def test_skill_ready_template_must_match_when_present(tmp_path):
+    _save_templates(tmp_path, ["skill_ready_1_3"])
+    reg = TemplateRegistry(tmp_path)
+    det = VisionDetector(reg, template_threshold=0.8)
+    assert det.is_skill_ready(_make_frame("skill_ready_1_3"), 1, 3) is True
+    assert det.is_skill_ready(_make_frame("attack"), 1, 3) is False

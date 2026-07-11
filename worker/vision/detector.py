@@ -4,9 +4,9 @@ Generic, FGO-agnostic: it matches templates in base-resolution (1280x720)
 space and reports the best-matching configured state. The ``worker.fgo``
 layer supplies the state definitions and the enum mapping.
 
-Battle vision is intentionally strict for execution-critical checks: if a
-template needed to prove skill/NP readiness is missing or not matched, callers
-receive ``False`` and should stop instead of continuing with unsafe fallback.
+Readiness templates are optional while calibration is incomplete: if a
+readiness template exists it must match; if it is absent, the caller may proceed
+but the action is unverified.
 """
 
 from __future__ import annotations
@@ -126,12 +126,12 @@ class VisionDetector:
         )
         tmpl = self.templates.get(template_id)
         if tmpl is None:
-            return False
+            return True
         return self.find_template(frame, template_id).found
 
     def is_np_ready(self, frame: Frame, servant_slot: int) -> bool:
         template_id = f"battle/np_ready_{servant_slot}"
         tmpl = self.templates.get(template_id)
         if tmpl is None:
-            return False
+            return True
         return self.find_template(frame, template_id).found

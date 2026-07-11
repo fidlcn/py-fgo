@@ -50,9 +50,14 @@ class ScriptedRunner:
         return CommandResult(0, b"", b"")
 
 
+def _fail_skill_ready(frame, servant_slot, skill):
+    raise AssertionError("skill readiness templates must not gate skill taps")
+
+
 def test_battle_turn_tap_sequence(tmp_path):
     # 1. Build templates matching the default state registry ids.
     cmd_frame = _marker_frame("ATTACK")
+    skill_frame = _marker_frame("SKILL_CONFIRM")
     card_frame = _marker_frame("CARDS")
     battle_dir = tmp_path / "battle"
     battle_dir.mkdir()
@@ -67,16 +72,19 @@ def test_battle_turn_tap_sequence(tmp_path):
     inst = {"id": "inst_t", "adb_device_id": "127.0.0.1:7555", "resolution_width": 1280, "resolution_height": 720}
     runner = ScriptedRunner(
         [
-            _png(cmd_frame),
-            _png(cmd_frame),
-            _png(cmd_frame),
-            _png(card_frame),
-            _png(card_frame),
-            _png(card_frame),
+            _png(cmd_frame),    # wait command phase
+            _png(cmd_frame),    # pre-skill comparison
+            _png(skill_frame),  # post-skill comparison: release popup opened
+            _png(skill_frame),  # pre-confirm comparison
+            _png(cmd_frame),    # post-confirm comparison
+            _png(cmd_frame),    # after confirming skill, command phase returns
+            _png(card_frame),   # wait card select
+            _png(card_frame),   # NP readiness
+            _png(card_frame),   # card recognition
         ]
     )
     ctx = build_worker_context(inst, cfg, runner=runner)
-    ctx.vision.is_skill_ready = lambda frame, servant_slot, skill: True  # type: ignore[method-assign]
+    ctx.vision.is_skill_ready = _fail_skill_ready  # type: ignore[method-assign]
     ctx.vision.is_np_ready = lambda frame, servant_slot: True  # type: ignore[method-assign]
     ctx.vision.find_all_cards = lambda frame: [  # type: ignore[method-assign]
         CardDetection(position=1, color="Arts", servant_slot=1),
@@ -118,6 +126,7 @@ def test_battle_turn_tap_sequence(tmp_path):
 
     expected = [
         ("165", "560"),   # servant skill (1,1)
+        ("1040", "640"),  # common skill confirm button
         ("1130", "640"),  # attack button
         ("890", "300"),   # NP card slot 3
         ("180", "560"),   # face card 1

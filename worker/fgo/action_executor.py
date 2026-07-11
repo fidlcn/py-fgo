@@ -78,6 +78,9 @@ class ActionExecutor:
     def tap_skill_confirm(self) -> None:
         self.tap_named("SKILL_CONFIRM_BUTTON", C.SKILL_CONFIRM_BUTTON)
 
+    def tap_skill_cancel(self) -> None:
+        self.tap_named("SKILL_CANCEL_BUTTON", C.SKILL_CANCEL_BUTTON)
+
     def tap_servant_skill(self, slot: int, skill: int) -> None:
         pt = C.SERVANT_SKILLS.get((slot, skill))
         if pt is None:

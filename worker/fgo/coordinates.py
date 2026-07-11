@@ -31,6 +31,7 @@ def scale_point(x: int, y: int, actual_w: int, actual_h: int) -> Tuple[int, int]
 
 ATTACK_BUTTON = Point(1130, 640)
 SKILL_CONFIRM_BUTTON = Point(1040, 640)
+SKILL_CANCEL_BUTTON = Point(435, 640)
 
 # (servant_slot, skill_index) -> Point. Servant skill clusters along the
 # bottom row; slot 1 values are the spec defaults, slots 2/3 extrapolated.

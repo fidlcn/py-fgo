@@ -38,6 +38,11 @@ POINTS: dict[str, dict[str, Any]] = {
         "category": "战斗指令",
         "default": C.SKILL_CONFIRM_BUTTON,
     },
+    "SKILL_CANCEL_BUTTON": {
+        "label": "战斗：技能取消",
+        "category": "战斗指令",
+        "default": C.SKILL_CANCEL_BUTTON,
+    },
     **{
         f"SERVANT_SKILL_{slot}_{skill}": {
             "label": f"战斗：从者 {slot} 技能 {skill}",
